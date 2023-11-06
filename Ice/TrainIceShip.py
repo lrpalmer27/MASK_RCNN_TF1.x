@@ -46,7 +46,7 @@ class IceConfig(Config):
     NUM_CLASSES = 1 + 1 + 1 # Background + Ice + Ship
 
     # Number of training steps per epoch
-    STEPS_PER_EPOCH = 10 #100
+    STEPS_PER_EPOCH = 100 #100
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
@@ -195,7 +195,7 @@ def train(model):
     print("Training network heads")
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=3,
+                epochs=50,
                 layers='heads')
 
 if __name__ == '__main__':
@@ -209,9 +209,7 @@ if __name__ == '__main__':
     else: 
         weights_path = ROOT_DIR+"\\mask_rcnn_coco.h5" 
         model.load_weights(weights_path, by_name=True, exclude=["mrcnn_class_logits", "mrcnn_bbox_fc","mrcnn_bbox", "mrcnn_mask"])
-        
-    
-    
+
     train(model)  
-    model.keras_model.save_weights(model_path)
+    model.keras_model.save_weights(model_path) #saves the final weights in the main working folder.
    

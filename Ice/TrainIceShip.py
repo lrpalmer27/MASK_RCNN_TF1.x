@@ -13,7 +13,7 @@ import skimage.draw
 ##paths to important things
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5") #path to coco weights
-DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "\\logs") #path to directory to store logs: C:\logs
+DEFAULT_LOGS_DIR = ROOT_DIR+"\\.logs" #path to directory to store logs: C:\logs
 dataset_path=ROOT_DIR+"\\.IceData\\NRC_data_multi_stage_big\\" #path to dataset directory - sub dirs should be train and val
 model_path = ROOT_DIR+'TF1_14_IceShipModel.h5' #path where you want model saved
 
@@ -21,6 +21,8 @@ model_path = ROOT_DIR+'TF1_14_IceShipModel.h5' #path where you want model saved
 sys.path.append(ROOT_DIR)  # To find local version of the library
 from mrcnn.config import Config
 from mrcnn import model as modellib, utils
+
+restarting = False #Change this to True if you want to grab the saved weights in the .logs dir and keep training.
 
 ############################################################
 #  Configurations
@@ -44,7 +46,7 @@ class IceConfig(Config):
     NUM_CLASSES = 1 + 1 + 1 # Background + Ice + Ship
 
     # Number of training steps per epoch
-    STEPS_PER_EPOCH = 100 #100
+    STEPS_PER_EPOCH = 10 #100
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
@@ -193,23 +195,21 @@ def train(model):
     print("Training network heads")
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=10,
+                epochs=3,
                 layers='heads')
 
 if __name__ == '__main__':
     config = IceConfig()
     config.display()
-    model = modellib.MaskRCNN(mode="training", config=config,model_dir=ROOT_DIR+"\\ICE_SHIP")
+    model = modellib.MaskRCNN(mode="training", config=config,model_dir=DEFAULT_LOGS_DIR)
     
-    # #if coco
-    weights_path = ROOT_DIR+"\\mask_rcnn_coco.h5" 
-    model.load_weights(weights_path, by_name=True, exclude=[
-            "mrcnn_class_logits", "mrcnn_bbox_fc",
-            "mrcnn_bbox", "mrcnn_mask"])
-
-    # #re-starting
-    # weights_path = model.find_last() #uncomment if need to re-start after pausing training.
-    # model.load_weights(weights_path, by_name=True) #uncomment if need to re-start after pausing training.
+    if restarting: 
+        weights_path = model.find_last() #uncomment if need to re-start after pausing training.
+        model.load_weights(weights_path, by_name=True)
+    else: 
+        weights_path = ROOT_DIR+"\\mask_rcnn_coco.h5" 
+        model.load_weights(weights_path, by_name=True, exclude=["mrcnn_class_logits", "mrcnn_bbox_fc","mrcnn_bbox", "mrcnn_mask"])
+        
     
     
     train(model)  

@@ -9,9 +9,10 @@ import random
 # load the class label names from disk, one label per line
 # CLASS_NAMES = open("coco_labels.txt").read().strip().split("\n")
 
-TestDir="\\data\\test_imgs\\"
-ROOT_DIR=os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLASS_NAMES = ['BG', 'Ice','Ship']
+TestDir="\\.IceData\\test_imgs\\"
+TrainedWeights=ROOT_DIR+"\\mask_rcnn_iceshiptf1config_0033.h5"
 
 class SimpleConfig(mrcnn.config.Config):
     # Give the configuration a recognizable name
@@ -31,7 +32,7 @@ model = mrcnn.model.MaskRCNN(mode="inference",
                              model_dir=os.getcwd())
 
 # Load the weights into the model.
-model.load_weights(filepath=ROOT_DIR+"\\data\\NRC_data_multi_stage_big\\mrcnn_big.h5", 
+model.load_weights(filepath=TrainedWeights, 
                    by_name=True)
 
 # load the input image, convert it from BGR to RGB channel

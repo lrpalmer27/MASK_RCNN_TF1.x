@@ -14,7 +14,7 @@ import skimage.draw
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5") #path to coco weights
 DEFAULT_LOGS_DIR = ROOT_DIR+"\\.logs" #path to directory to store logs: C:\logs
-dataset_path=ROOT_DIR+"\\.IceData\\NRC_data_multi_stage_big\\" #path to dataset directory - sub dirs should be train and val
+dataset_path=ROOT_DIR+"\\IceData\\NRC_data_multi_stage_big\\" #path to dataset directory - sub dirs should be train and val
 model_path = ROOT_DIR+'TF1_14_Big_IceShipModel.h5' #path where you want model saved
 
 # Import Mask RCNN

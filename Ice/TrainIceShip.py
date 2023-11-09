@@ -22,7 +22,7 @@ sys.path.append(ROOT_DIR)  # To find local version of the library
 from mrcnn.config import Config
 from mrcnn import model as modellib, utils
 
-restarting = False #Change this to True if you want to grab the saved weights in the .logs dir and keep training.
+restarting = True #Change this to True if you want to grab the saved weights in the .logs dir and keep training.
 
 ############################################################
 #  Configurations
@@ -46,7 +46,7 @@ class IceConfig(Config):
     NUM_CLASSES = 1 + 1 + 1 # Background + Ice + Ship
 
     # Number of training steps per epoch
-    STEPS_PER_EPOCH = 100 #100
+    STEPS_PER_EPOCH = 200 #100
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
@@ -195,7 +195,7 @@ def train(model):
     print("Training network heads")
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=50,
+                epochs=100,
                 layers='heads')
 
 if __name__ == '__main__':

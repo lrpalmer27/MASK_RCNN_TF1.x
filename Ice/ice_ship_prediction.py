@@ -12,7 +12,7 @@ import random
 ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLASS_NAMES = ['BG', 'Ice','Ship']
 TestDir="\\.IceData\\test_imgs\\"
-TrainedWeights=ROOT_DIR+"\\mask_rcnn_iceshiptf1config_0033.h5"
+TrainedWeights=ROOT_DIR+"\\mask_rcnn_iceshiptf1config_0050.h5"
 
 class SimpleConfig(mrcnn.config.Config):
     # Give the configuration a recognizable name

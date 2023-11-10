@@ -66,12 +66,6 @@ def VIA_annotation_val(ROOT_DIR,_annotations_dir,RegionAttributeName):
         if not os.path.exists(image_path):
             MissingFiles.append(filename)
         
-    return [Missing_RegionAttribute,MissingFiles]
-            
-if __name__ == '__main__':
-    ROOT_DIR,_annotations_dir,RegionAttributeName = _initpaths()
-    Missing_RegionAttribute,MissingFiles=VIA_annotation_val(ROOT_DIR,_annotations_dir,RegionAttributeName)
-    
     if len(Missing_RegionAttribute)==0 and len(MissingFiles)==0:
         print("\nAll good\n")
     else:
@@ -79,3 +73,8 @@ if __name__ == '__main__':
             print("\nmissing region attributes: ", Missing_RegionAttribute)
         if len(MissingFiles)>0: 
             print("\nmissing Files: ", MissingFiles)
+            
+if __name__ == '__main__':
+    ROOT_DIR,_annotations_dir,RegionAttributeName = _initpaths()
+    Missing_RegionAttribute,MissingFiles=VIA_annotation_val(ROOT_DIR,_annotations_dir,RegionAttributeName)
+    

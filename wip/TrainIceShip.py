@@ -10,19 +10,35 @@ import json
 import numpy as np
 import skimage.draw
 
-##paths to important things
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
-COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5") #path to coco weights
-DEFAULT_LOGS_DIR = ROOT_DIR+"\\.logs" #path to directory to store logs: C:\logs
-dataset_path=ROOT_DIR+"\\IceData\\NRC_data_multi_stage_big\\" #path to dataset directory - sub dirs should be train and val
-model_path = ROOT_DIR+'TF1_14_Big_IceShipModel.h5' #path where you want model saved
+restarting = True #Change this to True if you want to grab the saved weights in the .logs dir and keep training.
+trainbig=True #change to false if you want to train the small ice model.
 
 # Import Mask RCNN
 sys.path.append(ROOT_DIR)  # To find local version of the library
 from mrcnn.config import Config
 from mrcnn import model as modellib, utils
 
-restarting = True #Change this to True if you want to grab the saved weights in the .logs dir and keep training.
+def train_bigicemodel_initn():
+    ##paths to important things
+    dataset_path=ROOT_DIR+"\\IceData\\NRC_data_multi_stage_big\\" #path to dataset directory - sub dirs should be train and val
+    model_path = ROOT_DIR+'mrcnntf114_big_weights.h5' #path where you want model saved
+    global ConfigName
+    ConfigName="mrcnntf114_big"
+    return [dataset_path,model_path]
+
+def train_smallicemodel_initn():
+    ##paths to important things
+    dataset_path=ROOT_DIR+"\\IceData\\NRC_data_multi_stage_small\\" #path to dataset directory - sub dirs should be train and val
+    model_path = ROOT_DIR+'mrcnntf114_small_weights.h5' #path where you want model saved
+    global ConfigName
+    ConfigName="mrcnntf114_small"
+    return [dataset_path,model_path]
+
+##"hiding" these paths down here; shouldnt regularily change, keeping away from top of script.
+COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5") #path to coco weights
+DEFAULT_LOGS_DIR = ROOT_DIR+"\\.logs" #path to directory to store logs:
+
 
 ############################################################
 #  Configurations
@@ -34,7 +50,7 @@ class IceConfig(Config):
     Derives from the base Config class and overrides some values.
     """
     # Give the configuration a recognizable name
-    NAME = "IceShipTF1Config"
+    NAME = ConfigName
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
@@ -175,7 +191,7 @@ class IceDataset(utils.Dataset):
             super(self.__class__, self).image_reference(image_id)
 
 
-def train(model):
+def train(model,dataset_path):
     """Train the model."""
     # Training dataset.
     dataset_train = IceDataset()
@@ -199,6 +215,11 @@ def train(model):
                 layers='heads')
 
 if __name__ == '__main__':
+    if trainbig: 
+        dataset_path,model_path=train_bigicemodel_initn()
+    else: 
+        dataset_path,model_path = train_smallicemodel_initn()
+    
     config = IceConfig()
     config.display()
     model = modellib.MaskRCNN(mode="training", config=config,model_dir=DEFAULT_LOGS_DIR)
@@ -210,6 +231,6 @@ if __name__ == '__main__':
         weights_path = ROOT_DIR+"\\mask_rcnn_coco.h5" 
         model.load_weights(weights_path, by_name=True, exclude=["mrcnn_class_logits", "mrcnn_bbox_fc","mrcnn_bbox", "mrcnn_mask"])
 
-    train(model)  
+    train(model,dataset_path)  
     model.keras_model.save_weights(model_path) #saves the final weights in the main working folder.
    

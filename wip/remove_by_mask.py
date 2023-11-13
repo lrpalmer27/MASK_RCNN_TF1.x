@@ -1,4 +1,5 @@
-##this file will find faces in images, then remove all other pixles from the image before saving the new image, mask coordinates in VGG format so the faces can be associated with a name.
+##this file will find faces in images, then remove all other pixles from the image before saving the new image,
+# mask coordinates in VGG format so the faces can be associated with a name.
 
 import mrcnn
 import mrcnn.config
@@ -23,25 +24,23 @@ _TestDir= ROOT_DIR+"\\IceData\\test_imgs\\"
 _saveToDir=ROOT_DIR+"\\IceData\\stage1_save\\"
 _weightspth=ROOT_DIR+"\\mask_rcnn_iceshiptf1config_0050.h5"
 
-# class SimpleConfig(mrcnn.config.Config):
-#     # Give the configuration a recognizable name
-#     NAME = "2stepfacial"
+class SimpleConfig(mrcnn.config.Config):
+    # Give the configuration a recognizable name
+    NAME = "removebymask"
     
-#     # set the number of GPUs to use along with the number of images per GPU
-#     GPU_COUNT = 1
-#     IMAGES_PER_GPU = 1
+    # set the number of GPUs to use along with the number of images per GPU
+    GPU_COUNT = 1
+    IMAGES_PER_GPU = 1
 
-# 	# Number of classes = number of classes + 1 (+1 for the background). The background class is named BG
-#     NUM_CLASSES = len(CLASS_NAMES)
+	# Number of classes = number of classes + 1 (+1 for the background). The background class is named BG
+    NUM_CLASSES = len(CLASS_NAMES)
 
-# def config (): 
-#     config = TrainIceShip.IceConfig()
-#     config.display()
 
 def init():
     # Initialize the Mask R-CNN model for inference and then load the weights.
     # This step builds the Keras model architecture.
-    config = TrainIceShip.IceConfig()
+    # config = TrainIceShip.IceConfig()
+    config=SimpleConfig()
     config.display()
     model = mrcnn.model.MaskRCNN(mode="inference", 
                                 config=config,
@@ -159,7 +158,7 @@ def crop(r,image,filename):
     # visualize(r,image) ##troubleshooting
     return
    
-def remove_items(r,image,filename,InstanceToRemove='All'):
+def remove_items(r,image,filename):
     #this sets masks to black but when re-running the model it identifies some (not all) of the black sections as ice again; so maybe removing it is not the key here...?
     masks=r['masks']
     c = r['class_ids']
@@ -186,9 +185,8 @@ def remove_items(r,image,filename,InstanceToRemove='All'):
     
     save_as(newimg,filename,newimg)
 
-        
-
 if __name__=='__main__': 
+    global CLASS_NAMES
     CLASS_NAMES = ['BG', 'Ice', 'Ship']
     m=init()
     filenames=os.listdir(_TestDir)
@@ -199,7 +197,7 @@ if __name__=='__main__':
             r,img=detect(m,file) #remove filename output from this and make a for loop in this if statement to pick all pics in the dir
             # crop(r,img,file)
             # visualize(r,img,CLASS_NAMES)
-            remove_items(r,img,file,"Ice")
+            # remove_items(r,img,file) #sets masks to black and saves img.
         else:
             continue
 

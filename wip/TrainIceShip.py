@@ -23,6 +23,8 @@ def train_bigicemodel_initn():
     ##paths to important things
     dataset_path=ROOT_DIR+"\\IceData\\NRC_data_multi_stage_big\\" #path to dataset directory - sub dirs should be train and val
     model_path = ROOT_DIR+'mrcnntf114_big_weights.h5' #path where you want model saved
+    global maxdim
+    maxdim=1024 #1024 px for images -- config setting
     global ConfigName
     ConfigName="mrcnntf114_big"
     return [dataset_path,model_path]
@@ -31,6 +33,8 @@ def train_smallicemodel_initn():
     ##paths to important things
     dataset_path=ROOT_DIR+"\\IceData\\NRC_data_multi_stage_small\\" #path to dataset directory - sub dirs should be train and val
     model_path = ROOT_DIR+'mrcnntf114_small_weights.h5' #path where you want model saved
+    global maxdim
+    maxdim=300 #300 px for images -- config setting
     global ConfigName
     ConfigName="mrcnntf114_small"
     return [dataset_path,model_path]
@@ -50,7 +54,7 @@ class IceConfig(Config):
     Derives from the base Config class and overrides some values.
     """
     # Give the configuration a recognizable name
-    NAME = ConfigName
+    NAME = ConfigName #var dont change
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
@@ -68,8 +72,7 @@ class IceConfig(Config):
     DETECTION_MIN_CONFIDENCE = 0.9
     
     #since our images are huge
-    IMAGE_MAX_DIM=1024
-    # IMAGE_MIN_DIM=1024 
+    IMAGE_MAX_DIM=maxdim
 
 ############################################################
 #  Dataset

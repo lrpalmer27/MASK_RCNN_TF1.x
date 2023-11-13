@@ -1,0 +1,3 @@
+﻿,Carriage_Speed_DP,Global_FX,Global_FY,Global_FT,Global_MZ,Floe_Size,Ice_Conc,Drift_Speed,Ice_Thick,Drift_Angle,Trial
+0,0.0004,-9.817671429,-0.727092857,9.844985714,1.657478571,12p5,9ths,0p5kts,0p6m,0,1
+Frame instance,speed in m_s,Force in N,Force in N,Force in N,Moment ,"linear size of ice in m, decimals recorded as p",concentration as a number and ths represents division by 10 ,speed in knots p represents decimals and kts is the units,thickness of ice p represents decimal andm is the units meters,angle in degrees,trial number in the scenario where multiuple runs are done

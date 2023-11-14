@@ -11,8 +11,8 @@ import json
 #paths
 def _initpaths ():
     ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
-    # _annotations_dir=ROOT_DIR+'\\IceData\\NRC_data_multi_stage_big\\train\\'
-    _annotations_dir=ROOT_DIR+'\\IceData\\NRC_data_multi_stage_small\\train\\'
+    _annotations_dir=ROOT_DIR+'\\IceData\\NRC_data_multi_stage_big\\train\\'
+    # _annotations_dir=ROOT_DIR+'\\IceData\\NRC_data_multi_stage_small\\train\\'
     RegionAttributeName='Object'
     return [ROOT_DIR,_annotations_dir,RegionAttributeName]
 

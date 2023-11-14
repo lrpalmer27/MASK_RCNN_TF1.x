@@ -5,8 +5,8 @@ import mrcnn.visualize
 import cv2
 import os
 import random
-import csv
 import re
+import pandas as pd
 
 #important paths 
 ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -16,6 +16,7 @@ TrainedWeights=ROOT_DIR+"\\mask_rcnn_iceshiptf1config_0050.h5"
 DEFAULT_LOGS_DIR = ROOT_DIR+"\\.logs"
 _rawforceData=ROOT_DIR+"\\.rawForcedata"
 _rawvidData=ROOT_DIR+"\\.rawVideoData"
+_processedData=ROOT_DIR+'\\'+'.processedData'
 
 class loadconfig(Config):
     # Give the configuration a recognizable name
@@ -99,12 +100,11 @@ def numframes_forcedata(path):
     #provide path to csv and this will provide number in the last row of column 1
     csvpath=_rawforceData+"\\"+path
     try: 
-        with open(csvpath) as f:
-            reader = csv.reader(f)
-            nframes=(list(reader))[-1][0]
-
+        df=pd.read_csv(csvpath)
+        nframes=df.iat[-1,0]
+        
     except: 
-       print("Could not open:",path,"\nFull path:",csvpath)
+        print("Could not open:",path,"\nFull path:",csvpath)
        
     return (int(float(nframes)) + 1)
 
@@ -112,14 +112,13 @@ def GetCSVData(pth):
     #similar to fcn above but return all data (raw)
     csvpath=_rawforceData+"\\"+pth
     try: 
-        with open(csvpath) as f:
-            reader = csv.reader(f)
-            originalData=[i for i in reader]
-
+        df=pd.read_csv(csvpath)
+        OriginalData=df
+        
     except: 
-       print("Could not open:",pth,"\nFull path:",csvpath)
-       
-    return originalData
+        print("Could not open:",pth,"\nFull path:",csvpath)
+      
+    return df
     
 def validateSize(videoDir, ForceDir): 
     #this fcn validates that the same number of frames are in both the 
@@ -171,8 +170,26 @@ def processDetections(r):
     # this is done on a per frame basis
     None
     
-def save_newCSV(OriginalData, processedData):
+def save_newCSV(OriginalData, processedData,frameNum,filename):
     # this is done on a per frame basis
+    filepath=processedData+'\\'+filename+'.csv'
+    if not os.path.exists(filepath): #if it doesnt exist yet then put in the basics
+        originalheadings=['', 'Carriage_Speed_DP', 'Global_FX', 'Global_FY', 'Global_FT', 'Global_MZ', 'Floe_Size', 'Ice_Conc', 'Drift_Speed', 'Ice_Thick', 'Drift_Angle', 'Trial']
+        newheadings=['ConcBw_30_azimuth','ConcBw_90_azimuth','ConcBw_180_azimuth']
+        with open(filepath,'w') as file:
+            writer=csv.writer(file)
+            writer.writerow(originalheadings+newheadings)
+        lastrow=0+1 #alternate to opening the file we just created, we can just set lastrow to 0.
+        # add 1 to make sure we dont overwrite the last row - ie. last row is the row we CAN write on
+    else: 
+        lastrow=len(list(csv.reader(open(filename))))+1 #add 1 to make sure we dont overwrite the last row - ie. last row
+        # is the row we CAN write on
+    
+    # Now we can add the original data, and new data; frame by frame (this fcn gets called each frame)
+    with open(filepath,'w') as file:
+            writer=csv.writer(file)
+            writer.writerow(OriginalData+processedData)
+    
     None
 
 if __name__ == "__main__": 
@@ -187,11 +204,13 @@ if __name__ == "__main__":
     ## TODO (WIP): Now add iterative method to grab each datafile (CSV), extract the data we want to train a model on then rebuild a csv file for that video instance.
     mdl=init_model(config)
     for instance in ForceDir:
-        OriginalData=GetCSVData(instance)
+        regex="\d{2,3}p?\d?m_\dths_\d+p\d+kts_\d?p?\dm_\ddeg_\d{3}"
+        filename=re.match(regex, instance).group() #this extracts the important stuff not the garbage extras that are incl.
+        OriginalData=GetCSVData(instance) #returns a pandas dataframe.
         for frame in numframes_forcedata(instance):
             r=detect(mdl,frame)
             proc=processDetections(r) #TODO build this
-            save_newCSV(OriginalData,proc) #TODO build this
+            save_newCSV(OriginalData,proc,frame,filename) #TODO build this
             
  
     # mdl=init_model(config)

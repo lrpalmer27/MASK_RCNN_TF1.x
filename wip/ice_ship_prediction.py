@@ -15,6 +15,20 @@ TestDir="\\IceData\\test_imgs\\"
 # TestDir="\\IceData\\stage1_save\\"
 TrainedWeights=ROOT_DIR+"\\mask_rcnn_iceshiptf1config_0050.h5"
 
+
+def processDetections(r): 
+    #### this is a staging ground to develop this function and move it back to the Extract_data.py file.
+    ## the point of this function is to record the concentration of ice in certain areas relative to the ship;;; NOTE: does rely on the ship being detected.....and being detected correctly.
+    masks=r['masks']
+    boxes=r['rois']
+    c = r['class_ids']
+    class_ids=c.tolist()
+    scores=r['scores'] 
+    
+    
+    None
+
+
 class SimpleConfig(mrcnn.config.Config):
     # Give the configuration a recognizable name
     NAME = "Ice_ship_interference"
@@ -47,6 +61,8 @@ r = model.detect([image], verbose=0)
 
 # Get the results for the first image.
 r = r[0]
+
+processDetections(r)
 
 # Visualize the detected objects.
 print('Chosen random file to display with mask predictions: ',randomImg)

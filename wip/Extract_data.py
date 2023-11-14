@@ -44,10 +44,10 @@ def init_model(config):
 def RandompickFrame(): 
     # load the input image, convert it from BGR to RGB channel
     Test_Dir=os.listdir(ROOT_DIR+TestDir) 
-    randomImg=Test_Dir[random.randint(0,len(Test_Dir)-1)]
-    print('\n\nChosen random file to display with mask predictions: ',randomImg)
-    
-    image = cv2.imread(ROOT_DIR+TestDir+randomImg) #picks a random image in the kangaroo test image dir.
+    Imagepth=Test_Dir[random.randint(0,len(Test_Dir)-1)]
+    print('\n\nChosen random file to display with mask predictions: ',Imagepth)
+
+    image = cv2.imread(ROOT_DIR+TestDir+Imagepth) #picks a random image in the kangaroo test image dir.
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) #cv2 loads img bgr but tf needs it to be in rgb mode.
     
     return image
@@ -107,6 +107,19 @@ def numframes_forcedata(path):
        print("Could not open:",path,"\nFull path:",csvpath)
        
     return (int(float(nframes)) + 1)
+
+def GetCSVData(pth):
+    #similar to fcn above but return all data (raw)
+    csvpath=_rawforceData+"\\"+pth
+    try: 
+        with open(csvpath) as f:
+            reader = csv.reader(f)
+            originalData=[i for i in reader]
+
+    except: 
+       print("Could not open:",pth,"\nFull path:",csvpath)
+       
+    return originalData
     
 def validateSize(videoDir, ForceDir): 
     #this fcn validates that the same number of frames are in both the 
@@ -151,7 +164,16 @@ def validateSize(videoDir, ForceDir):
     # print("\n\nDifferences in number of frames actual vs recorded!",different)
     
     return different
-            
+
+def processDetections(r): 
+    # this function will process the results from the detected model (r) then will pass the new out to then be combined
+    # and saved into the updated csv format to pass along to the training stage.
+    # this is done on a per frame basis
+    None
+    
+def save_newCSV(OriginalData, processedData):
+    # this is done on a per frame basis
+    None
 
 if __name__ == "__main__": 
     config=loadconfig()
@@ -162,11 +184,19 @@ if __name__ == "__main__":
         print("Look into these differences",diff)
     ## up to here is working; in the test dataset - the videos and force containing csv files all have the same number of frames recorded.
     
-    ## TODO: Now add iterative method to grab each datafile (CSV), extract the data we want to train a model on then rebuild a csv file for that video instance.
-    
+    ## TODO (WIP): Now add iterative method to grab each datafile (CSV), extract the data we want to train a model on then rebuild a csv file for that video instance.
     mdl=init_model(config)
-    frm=RandompickFrame()
-    r=detect(mdl,frm)
-    visualize(frm,r) #vis
+    for instance in ForceDir:
+        OriginalData=GetCSVData(instance)
+        for frame in numframes_forcedata(instance):
+            r=detect(mdl,frame)
+            proc=processDetections(r) #TODO build this
+            save_newCSV(OriginalData,proc) #TODO build this
+            
+ 
+    # mdl=init_model(config)
+    # frm=RandompickFrame(instance)
+    # r=detect(mdl,frm)
+    # visualize(frm,r) #vis
     
     

@@ -17,6 +17,8 @@ DEFAULT_LOGS_DIR = ROOT_DIR+"\\.logs"
 _rawforceData=ROOT_DIR+"\\.rawForcedata"
 _rawvidData=ROOT_DIR+"\\.rawVideoData"
 _processedData=ROOT_DIR+'\\'+'.processedData'
+regex="\d{2,3}p?\d?m_\dths_\d+p\d+kts_\d?p?\dm_\ddeg_\d{3}"
+troubleshooting=False
 
 class loadconfig(Config):
     # Give the configuration a recognizable name
@@ -54,13 +56,20 @@ def RandompickFrame():
     return image
 
 
-def detect(model,frame): 
+def detect(model,frame_num,videopath): 
+    cap = cv2.VideoCapture(_rawvidData+'\\'+videopath)
+    # cap=cv2.cvtColor(cap, cv2.COLOR_BGR2RGB)
+    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num)
+    res, frame_bgr = cap.read()
+    frame = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+    
     # Perform a forward pass of the network to obtain the results
     r = model.detect([frame], verbose=0)
-
-    # Get the results for the first image.
     r = r[0]
     
+    if troubleshooting:
+        visualize(frame,r) 
+        
     return r
 
 def visualize(frame,r):
@@ -125,17 +134,17 @@ def validateSize(videoDir, ForceDir):
     # Step 1: Check if the same files are present in the two dirs
     # Step 2: Check if the are recorded as the same number of frames
     
+    videoDirWorking=videoDir.copy() #if you dont copy it this way remove() will remove the item from both lists later (they still remain connected if you just set them equal)
     #the regex format is the regex of NRC OCRE file format naming conventions
-    regex="\d{2,3}p?\d?m_\dths_\d+p\d+kts_\d?p?\dm_\ddeg_\d{3}"
     
     #step1 - do we have the same files in the same dirs?
     forceDir_reMatch = [re.match(regex, f).group() for f in ForceDir if re.match(regex, f)]
-    viddir_reMatch = [re.match(regex, v).group() for v in videoDir if re.match(regex, v)]
+    viddir_reMatch = [re.match(regex, v).group() for v in videoDirWorking if re.match(regex, v)]
     
     #make sure we did not miss a file if we didnt need to - ideally this is checked manually for typos infilenames after seeing this output.
     if len(forceDir_reMatch) != len(ForceDir): 
         print("Regex dropped a file from the force input files")
-    if len(viddir_reMatch) != len(videoDir): 
+    if len(viddir_reMatch) != len(videoDirWorking): 
         print("Regex dropped a file from the video input files")
     
     for fo in forceDir_reMatch: 
@@ -148,12 +157,14 @@ def validateSize(videoDir, ForceDir):
     
     #step 2 -- ensure the number of frames matches the expected frames from the dataset csv file.
     different=[]
+    correspondingfiles={}
     for file in ForceDir: 
         name=(re.match(regex,file)).group()
-        for vi in videoDir:
+        for vi in videoDirWorking:
             if name in vi: 
                 videofile=vi
-                videoDir.remove(vi)
+                videoDirWorking.remove(vi)
+                correspondingfiles[file]=vi
                 break                 
                 
         if NumFrames(videofile) != numframes_forcedata(file): 
@@ -162,7 +173,8 @@ def validateSize(videoDir, ForceDir):
     
     # print("\n\nDifferences in number of frames actual vs recorded!",different)
     
-    return different
+    # TODO: with the corresponding files dictionary here we could definitely streamline the first stage of this function.....
+    return [different,correspondingfiles]
 
 def processDetections(r): 
     # this function will process the results from the detected model (r) then will pass the new out to then be combined
@@ -170,52 +182,45 @@ def processDetections(r):
     # this is done on a per frame basis
     None
     
-def save_newCSV(OriginalData, processedData,frameNum,filename):
+def save_newCSV(OriginalData, processedData,filename):
     # this is done on a per frame basis
     filepath=processedData+'\\'+filename+'.csv'
+    
+    # Check if the csv file exists yet?
     if not os.path.exists(filepath): #if it doesnt exist yet then put in the basics
-        originalheadings=['', 'Carriage_Speed_DP', 'Global_FX', 'Global_FY', 'Global_FT', 'Global_MZ', 'Floe_Size', 'Ice_Conc', 'Drift_Speed', 'Ice_Thick', 'Drift_Angle', 'Trial']
-        newheadings=['ConcBw_30_azimuth','ConcBw_90_azimuth','ConcBw_180_azimuth']
-        with open(filepath,'w') as file:
-            writer=csv.writer(file)
-            writer.writerow(originalheadings+newheadings)
-        lastrow=0+1 #alternate to opening the file we just created, we can just set lastrow to 0.
-        # add 1 to make sure we dont overwrite the last row - ie. last row is the row we CAN write on
+        df=pd.DataFrame()
     else: 
-        lastrow=len(list(csv.reader(open(filename))))+1 #add 1 to make sure we dont overwrite the last row - ie. last row
-        # is the row we CAN write on
+        df=pd.read_csv(filepath) 
+    
+    # prepare new data to be added.
+    newrowdata=OriginalData+processedData
+    [instance, Carriage_Speed_DP, Global_FX, Global_FY, Global_FT, Global_MZ, Floe_Size, Ice_Conc, Drift_Speed, Ice_Thick, Drift_Angle, Trial,ConcBw_30_azimuth,ConcBw_90_azimuth,ConcBw_180_azimuth]=newrowdata
+    newrow_dic={'Instance':instance, 'Carriage_Speed_DP':Carriage_Speed_DP, 'Global_FX':Global_FX, 'Global_FY':Global_FY, 'Global_FT':Global_FT, 'Global_MZ':Global_MZ, 'Floe_Size':Floe_Size, 'Ice_Conc':Ice_Conc, 'Drift_Speed':Drift_Speed, 'Ice_Thick':Ice_Thick, 'Drift_Angle':Drift_Angle, 'Trial':Trial,'ConcBw_30_azimuth':ConcBw_30_azimuth,'ConcBw_90_azimuth':ConcBw_90_azimuth,'ConcBw_180_azimuth':ConcBw_180_azimuth}
     
     # Now we can add the original data, and new data; frame by frame (this fcn gets called each frame)
-    with open(filepath,'w') as file:
-            writer=csv.writer(file)
-            writer.writerow(OriginalData+processedData)
+    new=df.append(newrow_dic,ignore_index=True)
+    new.to_csv(filepath) #saves the new file each round incase there is an error we dont want it to be living in memory.
     
-    None
 
 if __name__ == "__main__": 
     config=loadconfig()
     config.display()
-    [videoDir, ForceDir]=listbothdirs()
-    diff=validateSize(videoDir, ForceDir)
+    videoDir, ForceDir=listbothdirs()
+    diff,correspondingfiles=validateSize(videoDir, ForceDir)
     if len(diff) != 0: 
         print("Look into these differences",diff)
     ## up to here is working; in the test dataset - the videos and force containing csv files all have the same number of frames recorded.
     
     ## TODO (WIP): Now add iterative method to grab each datafile (CSV), extract the data we want to train a model on then rebuild a csv file for that video instance.
     mdl=init_model(config)
-    for instance in ForceDir:
-        regex="\d{2,3}p?\d?m_\dths_\d+p\d+kts_\d?p?\dm_\ddeg_\d{3}"
-        filename=re.match(regex, instance).group() #this extracts the important stuff not the garbage extras that are incl.
-        OriginalData=GetCSVData(instance) #returns a pandas dataframe.
-        for frame in numframes_forcedata(instance):
-            r=detect(mdl,frame)
+    for forcefilename in correspondingfiles: 
+        baseFilename=re.match(regex, forcefilename).group() #this extracts the important stuff not the garbage extras that are incl.
+        videofilename=correspondingfiles[forcefilename]
+        OriginalData=GetCSVData(forcefilename) #returns a pandas dataframe.
+        for frameN in range(0,OriginalData.iat[-1,0]): #for range 0-number of frames (contained in cell )
+            r=detect(mdl,frameN,videofilename)
             proc=processDetections(r) #TODO build this
-            save_newCSV(OriginalData,proc,frame,filename) #TODO build this
-            
- 
-    # mdl=init_model(config)
-    # frm=RandompickFrame(instance)
-    # r=detect(mdl,frm)
-    # visualize(frm,r) #vis
-    
+            save_newCSV(OriginalData,proc,baseFilename)
+        
+
     

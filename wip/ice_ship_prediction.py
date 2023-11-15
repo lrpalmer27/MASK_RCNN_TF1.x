@@ -68,7 +68,7 @@ def processDetections(r):
     # visualize(image,out) #this is here to viz the boat mask only
     img=np.where(shipmask,0,image).astype(np.uint8) 
          
-    x,y=getcentroid(shipmask)
+    x,y,ShipLength=getcentroid(shipmask)
     centroid=np.array([x,y])
     
     #this visualizes the centroid to prove that its in the right spot.
@@ -77,11 +77,24 @@ def processDetections(r):
     # plt.show()
     
     ##get the direction
-    p0,p1=getshipdrxn(shipmask,centroid,100)
-    plt.imshow(img)
+    p0,p1,ptend=getshipdrxn(shipmask,centroid,radius=2.5*ShipLength)
+    
+    #show the direction
+    fig=plt.imshow(img)
+    # fig=plt.figure(img)
     plt.plot(p0[0],p0[1],'rx',markersize=5)
-    plt.plot(p1[0],p1[1],'gx',markersize=5)
-    plt.arrow(p0[0],p0[1],p1[0],p1[1])
+    plt.plot(ptend[0],ptend[1],'cx',markersize=5)
+    plt.arrow(p0[0],p0[1],p1[0],p1[1],color='g')
+    # circle1 = plt.Circle((p0[0],p0[1]), 0.5*ShipLength, color='g',fill=False)
+    # circle2=plt.Circle((p0[0],p0[1]), 2*ShipLength, color='r', fill=False)
+    # plt.gca().add_patch(circle1)
+    # plt.gca().add_patch(circle2)
+
+    # ax_polar = fig.add_axes(rect, polar=True, frameon=False)
+    ax_polar=fig.add
+    ax_polar.set_rmax(2.0)
+    ax_polar.grid(True)
+    
     plt.show()
     
     print("Crossing guard")
@@ -98,22 +111,26 @@ def processDetections(r):
 
 def getshipdrxn(mask,centroid,radius):
     ## TODO add way to consider alternat headings here
-    # this method currently only considers the ship heading to be straight towards the left
-    ## we will need to consider alternate headings later
+    # this needs to return the DELTA ONLY
     p0=centroid
-    p1=[centroid[0]-radius,centroid[1]]
-    return [p0,p1]
+    ptend=[centroid[0]-radius,centroid[1]] #this returns a point, the distance of 1 radius away
+    p1=[-radius,0] #this needs to be updated to account for variations in heading of the masked ship
+    return [p0,p1,ptend]
 
 def getcentroid(m): 
     #m is one mask
     ##get xy coordinates of each item, then avg them
     horiz = np.where(np.any(m, axis=0))[0]
     verti = np.where(np.any(m, axis=1))[0]
+    
+    hmax,hmin = horiz[[0, -1]]
+    
+    ShipL=abs(hmax-hmin) #shiplength in px
 
     hori_mean=np.mean(horiz)
     verti_mean=np.mean(verti)
 
-    return [hori_mean,verti_mean]
+    return [hori_mean,verti_mean,ShipL]
 
 class SimpleConfig(mrcnn.config.Config):
     # Give the configuration a recognizable name

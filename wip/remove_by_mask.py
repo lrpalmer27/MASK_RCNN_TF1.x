@@ -175,7 +175,6 @@ def remove_items(r,image,filename):
     blk=n
     blk[:]=0
     
-
     if masks.shape[-1] > 0:
         # We're treating all instances as one, so collapse the mask into one layer
         mask = (numpy.sum(masks, -1, keepdims=True) >= 1)

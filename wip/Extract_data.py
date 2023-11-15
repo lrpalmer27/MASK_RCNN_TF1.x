@@ -180,6 +180,30 @@ def processDetections(r):
     # this function will process the results from the detected model (r) then will pass the new out to then be combined
     # and saved into the updated csv format to pass along to the training stage.
     # this is done on a per frame basis
+    
+    ## general procedure: 
+    #   1) In comes "r" the results for the frame being detected.
+    #       a) define the region bounds: the radii and the angles
+    #       b) make a f'region_{angle1}:{angle2}_{r_min}:{r_max}={} dictionary.
+    #           End keys will be: 'detection index' as int, where the value will be a running tally of the area
+    #   2) Make sure that there is a ship detected, and only ONE ship detected
+    #       a) if zero ships; initialize the new parameters into the results dictionary as empty and move to next frame.
+    #   3) get ship centroid, and length (see jupyter notebook - already implemented)
+    #   4) For every mask; add the following items to the "r" dictionary
+    #       a) centroid of that mask
+    #           - r['centroid']=[x,y]
+    #   5) Calculate the euclidian (straight line) distance to the centroid of the ship, if the distance < 3 ship lengths then do the following; if not, jump to next detection
+    #   **6) Read indecies of the mask belonging to that detection; the indeces of the mask coorelate to the coordinates of each pixel of the image.
+    #           For each pixel, calculate the euclidian distance to the ship centroid, and the angle.
+    #   **7) Based on the angle and euclidian distance, search trough list of regions (by their defining angles and radius) to determine the region that pixel belongs to
+    #   **8) Add that one pixel value to the region it corresponds to's running area tally - literally adding +1 each time. Maybe have a set of IF statements that will direct you to the region you fall within.
+    #   **9) REPEAT FOR ALL DETECTIONS
+    # 
+    #   10) calculate the ice concentration in each region, (will need to sum area from each detection region that is contained in that region dict)
+    #       Calculate the ice floe size distribution (for this we will need the area of each floe contained in the region; hence why above struct.)
+    #       
+
+    
     None
     
 def save_newCSV(OriginalData, processedData,filename):
@@ -220,6 +244,7 @@ if __name__ == "__main__":
         for frameN in range(0,OriginalData.iat[-1,0]): #for range 0-number of frames (contained in cell )
             r=detect(mdl,frameN,videofilename)
             proc=processDetections(r) #TODO build this
+            #save a csv file for every frame - overwriting the previous so we can pickup where we left off.
             save_newCSV(OriginalData,proc,baseFilename)
         
 

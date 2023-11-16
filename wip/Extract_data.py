@@ -127,7 +127,7 @@ def GetCSVData(pth):
     csvpath=_rawforceData+"\\"+pth
     try: 
         df=pd.read_csv(csvpath)
-        OriginalData=df
+        t=df[:1].values.tolist()[0]
         
     except: 
         print("Could not open:",pth,"\nFull path:",csvpath)
@@ -353,7 +353,7 @@ def getShipDrxn(mask,centroid,radius):
 
 def save_newCSV(OriginalData, processedData,filename):
     # this is done on a per frame basis
-    filepath=processedData+'\\'+filename+'.csv'
+    filepath=_processedData+'\\'+filename+'.csv'
     
     # Check if the csv file exists yet?
     if not os.path.exists(filepath): #if it doesnt exist yet then put in the basics
@@ -369,8 +369,35 @@ def save_newCSV(OriginalData, processedData,filename):
     # Now we can add the original data, and new data; frame by frame (this fcn gets called each frame)
     new=df.append(newrow_dic,ignore_index=True)
     new.to_csv(filepath) #saves the new file each round incase there is an error we dont want it to be living in memory.
+
+def PostProcess_OriginalData(OriginalData):
+    #Format for the original data input list;
+    # OriginalData = [FrameN (int),Carriage_Speed_DP (float),Global_FX (float),Global_FY (float),Global_FT (float), ...
+    #                   Global_MZ (float),Floe_Size (string), Ice_Conc (string),Drift_Speed (string), ...
+    #                   Ice_Thick (string),Drift_Angle (string),Trial (int)]
     
+    # In theory this function will be used to calculate the instantaneous speed of the vessel rather than relying on the current
+    # speed data that we have access to in the NRC dataset; being carriage speed; which only roughly approximates the speed of
+    # of the vessel which is under DP control.
+    
+    # These functions just make sure we have numerical values rather than strings that we save.
+    floesize=float(OriginalData[6].replace('p','.'))
+    driftspeed=float(OriginalData[8].replace('kts','').replace('p','.'))
+    iceThickness=float(OriginalData[9].replace('m','').replace('p',''))
+
+    # Here grab only the relevant data that we want to feed into the next model -- everything except Ice_Conc, Trial 
+    ProcessedOriginalData=OriginalData[0:6]+OriginalData[8:11] #this needs to be a list of things in the following order: 
+    # ProcessedOriginalData = [FrameN (int),Carriage_Speed_DP (float),Global_FX (float),Global_FY (float),Global_FT (float), ...
+    #                   Global_MZ (float),Floe_Size (string),Drift_Speed (float), ...
+    #                   Ice_Thick (float),Drift_Angle (float)]
+    #
+    ## Realize that Ice_Conc and trial number are removed.
+    ProcessedOriginalData = OriginalData[0:6]+[floesize]+[driftspeed]+[iceThickness]+[OriginalData[10]]
+    return ProcessedOriginalData
+
+ 
 def troubleshootdetection(model):
+    #this is hard coding the image that we want to use for devel. purposes.
     image = cv2.imread(r"C:\Users\logan\Desktop\MEng\Mask_RCNN\IceData\test_imgs\100m_dist_9ths_1p2kts_0p4m_0deg_001_c_overhead_frame361.png") #picks a random image in the kangaroo test image dir.
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     r = model.detect([image], verbose=0)
@@ -402,14 +429,15 @@ if __name__ == "__main__":
         for frameN in range(0,OriginalData.iat[-1,0]): #for range 0-number of frames (contained in cell )
             # r=detect(mdl,frameN,videofilename)
             r,image=troubleshootdetection(mdl) ## only use this for troubleshooting; remove later.
-            regionStats, RegionDefinition, =processDetections(r)
+            regionStats,regiondefinitions =processDetections(r)
+            # viz_centroids(image,regionStats['Centroids'])
             
-            viz_centroids(image,regionStats['Centroids'])
-            
-            
+            # From Shameem: the speed recorded in these preliminary datafiles are the carriage speed; while the vessel is under DP control.
+            # We need to consider the thrust --> speed conversion here to get the actual vessel speed.
+            ProcessedOriginalData=PostProcess_OriginalData(OriginalData[:frameN+1].values.tolist()[0])
+
             #save a csv file for every frame - overwriting the previous so we can pickup where we left off.
-            
-            # save_newCSV(OriginalData,proc,baseFilename)
+            save_newCSV(ProcessedOriginalData,regionStats,baseFilename) #not allowed to grab the column names as the first row; needs to be row 1
         
 
     

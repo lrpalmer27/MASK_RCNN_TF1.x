@@ -7,13 +7,13 @@ The repository includes:
 * Jupyter notebooks to visualize the detection pipeline at every step
 * IceData dataset is from NRC OCRE Magne Viking model testing
 * Architecture to extract the following from each proposed detection and save into a CSV file for future training
-*   Mask centroid
-*   Position in user-defined cylindrical polar user-defined coordinate "grid"; the purpose of which is to extract model statistics (Floe area distribution, and ice concentration in each region)
+    *   Mask centroid
+    *   Position in user-defined cylindrical polar user-defined coordinate "grid"; the purpose of which is to extract model statistics (Floe area distribution, and ice concentration in each region)
 * Beginning of an RNN training area to train a RNN model on the ice-ship data to predict ice collision forces.
-* The entire repo is built to predict ice-ship collision forces from an optical sensor (overhead camera feed in this implementation). The three stage process to do so is here:
-*   MRCNN used for semantic segmentation of ice/ship images
-*   Extraction of data from MRCNN model into statistics (saved as CSV files)
-*   RNN training architecture to predict ice collision forces.
+* The entire repo is built to predict ice-ship collision forces from an optical sensor (overhead camera feed in this implementation). The three stage process to do so is here.
+    *   MRCNN used for semantic segmentation of ice/ship images
+    *   Extraction of data from MRCNN model into statistics (saved as CSV files)
+    *   RNN training architecture to predict ice collision forces.
 
 
 The code is documented and designed to be easy to extend. If you use it in your research, please consider citing this repository (bibtex below). If you work on 3D vision, you might find our recently released [Matterport3D](https://matterport.com/blog/2017/09/20/announcing-matterport3d-research-dataset/) dataset useful as well.

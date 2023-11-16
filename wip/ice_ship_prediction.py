@@ -165,8 +165,9 @@ r = model.detect([image], verbose=0)
 # Get the results for the first image.
 r = r[0]
 
-processDetections(r)
+# processDetections(r)
 
 # Visualize the detected objects.
 print('Chosen random file to display with mask predictions: ',randomImg)
 
+visualize (image,r)

@@ -7,6 +7,11 @@ import os
 import random
 import re
 import pandas as pd
+import numpy as np
+import sys
+import math
+import bisect
+import time
 
 #important paths 
 ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -201,11 +206,151 @@ def processDetections(r):
     # 
     #   10) calculate the ice concentration in each region, (will need to sum area from each detection region that is contained in that region dict)
     #       Calculate the ice floe size distribution (for this we will need the area of each floe contained in the region; hence why above struct.)
-    #       
+    # 
+    
+    # Open variables of results that we will use later       
+    masks=r['masks']
+    classes=r['class_ids']
+    
+    # Get the indecies of "ship" detections (predictions)
+    shipIndex=np.where(classes==CLASS_NAMES.index('Ship'))[0]
+    
+    # Eventually make this a method to consider the ship with the highest probability
+    # within a certain expected region; "the" ship that we use from here out
+    if shipIndex.shape[0] != 1:
+        ## TODO: Implement the notes above, for now skip this entire frame.
+        print("\n\n we have identified more than one ship \n\n")
+        return  "something here" ## add somethign here that exits out of the frame
+    
+    # Assuming we only have one ship detected now (not zero not > 1)
+    # Get ship centroid & length
+    o=getCentroid(masks[:, :, shipIndex[0]][:, :, np.newaxis],GetShipLength=True) #returns x,y and ship length
+    ShipCentroid=o[0:2]
+    ShipLength=o[2]
+    
+    # Define region bounds
+    RegionDefinition={"Radii":[0.5*ShipLength,1*ShipLength,2.5*ShipLength],"AngleIncrements":[20,60,135,180]} #do NOT explicitly say 0 degrees.
+    
+    # Initialize dictionary of the regions; these will be filled in later with sub-dictionaries that have the "index-class" of the detection we found
+    regionStats={}
+    prevRadi=0
+    prevAngl=0
+    regionStats["Centroids"]=[] #empty list, eventually will be a list of lists, where each sub list is the x,y coords of a centroid. Purely for vis purposes later
+    for Radi in RegionDefinition["Radii"]:
+        for angl in RegionDefinition["AngleIncrements"]: 
+            regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}"]={}
+            if prevAngl != 0:
+                regionStats[f"Region_{prevRadi}:{Radi}_{-prevAngl}:{-angl}"]={}
+            else: 
+                regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{-angl}"]={}
+            prevAngl=angl
+        prevRadi=Radi
+        prevAngl=0
+    
+    # Iterate over every prediction detection
+    for N0 in range(0,classes.shape[0]): 
+        t0=time.time()
+        centroid=getCentroid(masks[:, :, N0][:, :, np.newaxis])
+        regionStats["Centroids"].append(centroid)
+        Dist2ship=math.sqrt(((ShipCentroid[0]-centroid[0])**2) + ((ShipCentroid[1]-centroid[1])**2)) #euclidian distance b/w ship centroid and detection centroid
+        
+        #only do these things if the centroid of this detection is < threshold away from the ship centroid -- limit is purely for computational efficiency
+        if Dist2ship < 3.5 * ShipLength :
+            
+            # Iterate over every pixel in the current mask (that has centroid < 3.5 SL away) and assign +1 to the area running sum for 
+            # the region it falls within
+            current_mask=masks[:, :, N0][:, :, np.newaxis]
 
+            #Get indeces of mask pixels that evaluate to True, store x and y indecies in cx and cy vars
+            Cx=np.where(current_mask)[1] ## C[0] is y axis and C[1] is x axis!!!!!!!!!!!!!! pulls in bkwrds!!!
+            Cy=np.where(current_mask)[0] ## C[0] is y axis and C[1] is x axis!!!!!!!!!!!!!! pulls in bkwrds!!!
+            
+            for item in range(0,len(Cx)): 
+                ccord=[Cx[item],Cy[item]]
+                R=math.sqrt(((ShipCentroid[0]-ccord[0])**2) + ((ShipCentroid[1]-ccord[1])**2))
+                theta=math.degrees(math.atan2(ShipCentroid[1]-ccord[1],ShipCentroid[0]-ccord[0])) #these angles DO work with the coordinate system we have
+                
+                rlist=RegionDefinition["Radii"].copy()
+                rlist.append(0)
+                rbounds=BinarySearch(sorted(rlist),R)
+                a=[[value, -value] for value in RegionDefinition["AngleIncrements"]]
+                a1=[item for sublist in a for item in sublist] #flatten list of lists
+                a1.append(0)
+                angleList=sorted(a1)
+                abounds=BinarySearch(angleList,theta)
+
+                if rbounds == [0,0] or abounds == [0,0]: 
+                    # print("out of range of consideration")
+                    None
+                # elif rbounds != 0 and abounds != 0: 
+                else:
+                    # print(R,"dist between",rbounds[0],"&",rbounds[1])
+                    # print(theta,"deg between",abounds[0],"&",abounds[1]) 
+                    
+                    regionStats[f"Region_{rbounds[0]}:{rbounds[1]}_{abounds[0]}:{abounds[1]}"][f'Index:{N0}']=400
+                    if not f'Index:{N0}' in regionStats[f"Region_{rbounds[0]}:{rbounds[1]}_{abounds[0]}:{abounds[1]}"]: #initialize: set this index =1
+                        regionStats[f"Region_{rbounds[0]}:{rbounds[1]}_{abounds[0]}:{abounds[1]}"][f'Index:{N0}']=1
+                    else:
+                        regionStats[f"Region_{rbounds[0]}:{rbounds[1]}_{abounds[0]}:{abounds[1]}"][f'Index:{N0}']+=1
+                
+        print(time.time()-t0) #takes about 3s per mask so dending on the number of masks in the region
+    return [regionStats, RegionDefinition]
+
+def BinarySearch(searchlist,R): 
+    indi=bisect.bisect_left(searchlist,R)
+    ii=bisect.bisect_right(searchlist,R)
+    listlength=len(searchlist)
+
+    if indi == ii: 
+        if ii >= listlength and indi >= listlength: # this deals with the case when the number is greater than the max number on the list
+            # print("none")
+            return [0,0]
+        else: #this deals with all 'regular' cases; where the input number is between two items on the list
+            # print("regular between:",searchlist[indi-1],searchlist[ii])
+            bounds=[searchlist[indi-1],searchlist[ii]]
+    if indi != ii:
+        if ii >= listlength: # this deals with the case where we are on the upper line - goes into the smaller category
+            # print("onthe topline between:",searchlist[indi-1],searchlist[ii-1])
+            bounds=[searchlist[indi-1],searchlist[ii-1]]
+        else: #this deals with cases where R lies on the dividing line -- goes into the bigger category
+            # print("ontheline between:",searchlist[indi],searchlist[ii])
+            bounds=[searchlist[indi],searchlist[ii]] 
     
-    None
+    #we want to read bounds as 0:20, and 0:-20 NOT -20:0 (ascending order)
+    if bounds[0] >=0 and bounds[1] >=0: #no negatives? pass, it should be in ascending order
+        return bounds
+    else: # if theres negatrives, make the order descending
+        return [bounds[1],bounds[0]]
+
+def getCentroid(mask,GetShipLength=False):
+    #m is one mask
+    ##get xy coordinates of each item, then avg them
+    horiz = np.where(np.any(mask, axis=0))[0]
+    verti = np.where(np.any(mask, axis=1))[0]
     
+    hori_mean=np.mean(horiz)
+    verti_mean=np.mean(verti)
+    
+    output=[hori_mean,verti_mean]
+    
+    if GetShipLength:
+        #this gets length of the mask- can be used to get shiplength with zero yaw
+        hmax,hmin = horiz[[0, -1]]
+        ShipL=abs(hmax-hmin) #shiplength in px
+        output.append(ShipL)
+
+    return output
+
+def getShipDrxn(mask,centroid,radius): 
+    ## TODO add way to consider alternat headings here
+    # this needs to return the DELTA ONLY
+    p0=centroid
+    ptend=[centroid[0]-radius,centroid[1]] #this returns a point, the distance of 1 radius away
+    p1=[-radius,0] #this needs to be updated to account for variations in heading of the masked ship
+    
+    return [p0,p1,ptend]
+
+
 def save_newCSV(OriginalData, processedData,filename):
     # this is done on a per frame basis
     filepath=processedData+'\\'+filename+'.csv'
@@ -225,6 +370,19 @@ def save_newCSV(OriginalData, processedData,filename):
     new=df.append(newrow_dic,ignore_index=True)
     new.to_csv(filepath) #saves the new file each round incase there is an error we dont want it to be living in memory.
     
+def troubleshootdetection(model):
+    image = cv2.imread(r"C:\Users\logan\Desktop\MEng\Mask_RCNN\IceData\test_imgs\100m_dist_9ths_1p2kts_0p4m_0deg_001_c_overhead_frame361.png") #picks a random image in the kangaroo test image dir.
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    r = model.detect([image], verbose=0)
+    r = r[0]
+    return r,image
+
+def viz_centroids(image,centroidlist):
+    import matplotlib.pyplot as plt
+    plt.imshow(image)
+    for i in centroidlist: 
+        plt.plot(i[0],i[1],'rx',markersize=5)
+    plt.show()
 
 if __name__ == "__main__": 
     config=loadconfig()
@@ -242,10 +400,16 @@ if __name__ == "__main__":
         videofilename=correspondingfiles[forcefilename]
         OriginalData=GetCSVData(forcefilename) #returns a pandas dataframe.
         for frameN in range(0,OriginalData.iat[-1,0]): #for range 0-number of frames (contained in cell )
-            r=detect(mdl,frameN,videofilename)
-            proc=processDetections(r) #TODO build this
+            # r=detect(mdl,frameN,videofilename)
+            r,image=troubleshootdetection(mdl) ## only use this for troubleshooting; remove later.
+            regionStats, RegionDefinition, =processDetections(r)
+            
+            viz_centroids(image,regionStats['Centroids'])
+            
+            
             #save a csv file for every frame - overwriting the previous so we can pickup where we left off.
-            save_newCSV(OriginalData,proc,baseFilename)
+            
+            # save_newCSV(OriginalData,proc,baseFilename)
         
 
     

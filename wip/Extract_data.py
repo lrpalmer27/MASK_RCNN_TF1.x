@@ -355,20 +355,34 @@ def save_newCSV(OriginalData, processedData,filename):
     # this is done on a per frame basis
     filepath=_processedData+'\\'+filename+'.csv'
     
+    F=list(OriginalData["Names"])
+    F_data=list(OriginalData["Data"])
+    S=list(processedData["RegionNames"])
+    S_tall=[[f"{i} - Ice Conc",f"{i} - StdDev"] for i in S]
+    S_flattened=[item for sublist in S_tall for item in sublist]
+    S_flattened_data=[]
+    for i in range(0,len(list(processedData["RegionNames"]))):
+        S_flattened_data.append(processedData["IceConcentratons_pct"][i])
+        S_flattened_data.append(processedData["StandardDeviation"][i])
+    
+    ListofHeading_keys=F+S_flattened
+    ListofEverything=F_data+S_flattened_data
+    
+    together=dict(zip(ListofHeading_keys,ListofEverything))
+    
     # Check if the csv file exists yet?
     if not os.path.exists(filepath): #if it doesnt exist yet then put in the basics
         df=pd.DataFrame()
+        for i in list(together.keys()):
+            temp=together[i]
+            together[i]=[0,temp]
     else: 
         df=pd.read_csv(filepath) 
     
-    # prepare new data to be added.
-    newrowdata=OriginalData+processedData
-    [instance, Carriage_Speed_DP, Global_FX, Global_FY, Global_FT, Global_MZ, Floe_Size, Ice_Conc, Drift_Speed, Ice_Thick, Drift_Angle, Trial,ConcBw_30_azimuth,ConcBw_90_azimuth,ConcBw_180_azimuth]=newrowdata
-    newrow_dic={'Instance':instance, 'Carriage_Speed_DP':Carriage_Speed_DP, 'Global_FX':Global_FX, 'Global_FY':Global_FY, 'Global_FT':Global_FT, 'Global_MZ':Global_MZ, 'Floe_Size':Floe_Size, 'Ice_Conc':Ice_Conc, 'Drift_Speed':Drift_Speed, 'Ice_Thick':Ice_Thick, 'Drift_Angle':Drift_Angle, 'Trial':Trial,'ConcBw_30_azimuth':ConcBw_30_azimuth,'ConcBw_90_azimuth':ConcBw_90_azimuth,'ConcBw_180_azimuth':ConcBw_180_azimuth}
-    
-    # Now we can add the original data, and new data; frame by frame (this fcn gets called each frame)
-    new=df.append(newrow_dic,ignore_index=True)
-    new.to_csv(filepath) #saves the new file each round incase there is an error we dont want it to be living in memory.
+        # Now we can add the original data, and new data; frame by frame (this fcn gets called each frame)
+        # new=df.append(together)
+        df.loc[len(df)] = together
+        df.to_csv(filepath) #saves the new file each round incase there is an error we dont want it to be living in memory forever.
 
 def PostProcess_OriginalData(OriginalData):
     #Format for the original data input list;
@@ -387,13 +401,14 @@ def PostProcess_OriginalData(OriginalData):
 
     # Here grab only the relevant data that we want to feed into the next model -- everything except Ice_Conc, Trial 
     ProcessedOriginalData=OriginalData[0:6]+OriginalData[8:11] #this needs to be a list of things in the following order: 
-    # ProcessedOriginalData = [FrameN (int),Carriage_Speed_DP (float),Global_FX (float),Global_FY (float),Global_FT (float), ...
-    #                   Global_MZ (float),Floe_Size (string),Drift_Speed (float), ...
-    #                   Ice_Thick (float),Drift_Angle (float)]
+    ColumnNames = ['FrameN (int)','Carriage_Speed_DP (float)','Global_FX (float)','Global_FY (float)','Global_FT (float)',
+                      'Global_MZ (float)','Floe_Size (string)','Drift_Speed (float)',
+                      'Ice_Thick (float)','Drift_Angle (float)']
     #
     ## Realize that Ice_Conc and trial number are removed.
     ProcessedOriginalData = OriginalData[0:6]+[floesize]+[driftspeed]+[iceThickness]+[OriginalData[10]]
-    return ProcessedOriginalData
+    out={"Names":ColumnNames,"Data":ProcessedOriginalData}
+    return out
 
 def convertRegionStats (regionStats,RegionDefinition):
     prevRadi=0
@@ -505,18 +520,18 @@ if __name__ == "__main__":
             # r,image=detect(mdl,frameN,videofilename)
             r,image=troubleshootdetection(mdl) ## only use this for troubleshooting; remove later.
             regionStats,regiondefs =processDetections(r)
-            # viz_centroids(image,regionStats['Centroids'],r)
-            p=time.time()
+            if troubleshooting:#only activates if we are in troubleshooting mode (defined above)
+                viz_centroids(image,regionStats['Centroids'],r)
+            
             # Concert regionStats dict of dicts into ice concentration and ice size distribution data for each region;
             regionIceFinalStats=convertRegionStats(regionStats,regiondefs) #TODO: finsih this and merge it with the processDetections function.
             
             # From Shameem: the speed recorded in these preliminary datafiles are the carriage speed; while the vessel is under DP control.
             # We need to consider the thrust --> speed conversion here to get the actual vessel speed.
             ProcessedOriginalData=PostProcess_OriginalData(OriginalData[:frameN+1].values.tolist()[0])
-            print("time",time.time()-p)
 
             #save a csv file for every frame - overwriting the previous so we can pickup where we left off.
-            save_newCSV(ProcessedOriginalData,regionStats,baseFilename) #not allowed to grab the column names as the first row; needs to be row 1
+            save_newCSV(ProcessedOriginalData,regionIceFinalStats,baseFilename) #not allowed to grab the column names as the first row; needs to be row 1
         
 
     

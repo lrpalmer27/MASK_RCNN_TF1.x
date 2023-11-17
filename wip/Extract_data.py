@@ -470,11 +470,10 @@ def viz_centroids(image,centroidlist,r,ShowCentroids=True,ShowRegions=True):
     shipx,shipy,ShipLength=getCentroid(masks[:, :, shipIndex[0]][:, :, np.newaxis],GetShipLength=True)
     
     if ShowCentroids:
-        n=0
         for i in centroidlist: 
+            n=centroidlist.index(i)
             plt.plot(i[0],i[1],'rx',markersize=5)
             pylab.text(i[0]+30,i[1],n)
-            n+=1
     
     if ShowRegions:
         radii=[0.5,1,2.5]
@@ -482,11 +481,10 @@ def viz_centroids(image,centroidlist,r,ShowCentroids=True,ShowRegions=True):
             plt.gca().add_patch(plt.Circle((shipx,shipy), radius*ShipLength, color='black', fill=False))
 
         addlines(plt,radius=2.5*ShipLength,equalangles=False,angleIncrement=[0,20,60,135,180],center=[shipx,shipy])
+        plt.xlim(0, image.shape[1])
+        plt.ylim(0, image.shape[0])
         
-    plt.xlim(0, image.shape[1])
-    plt.ylim(0, image.shape[0])
-    plt.show()
-    
+
     plt.show()
 
 if __name__ == "__main__": 
@@ -508,7 +506,7 @@ if __name__ == "__main__":
             # r=detect(mdl,frameN,videofilename)
             r,image=troubleshootdetection(mdl) ## only use this for troubleshooting; remove later.
             regionStats,regiondefs =processDetections(r)
-            viz_centroids(image,regionStats['Centroids'],r)
+            viz_centroids(image,regionStats['Centroids'],r,ShowRegions=False)
             
             # Concert regionStats dict of dicts into ice concentration and ice size distribution data for each region;
             convertRegionStats(regionStats,regiondefs) #TODO: finsih this and merge it with the processDetections function.

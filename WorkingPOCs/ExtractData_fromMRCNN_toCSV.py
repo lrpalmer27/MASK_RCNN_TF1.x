@@ -253,6 +253,11 @@ def processDetections(r):
         t0=time.time()
         centroid=getCentroid(masks[:, :, N0][:, :, np.newaxis])
         regionStats["Centroids"].append(centroid)
+        if CLASS_NAMES[classes[N0]] != 'Ice':
+            qv=CLASS_NAMES[classes[N0]]
+            continue
+        
+        #Get euclidian distance between the current centroid and the vessel.
         Dist2ship=math.sqrt(((ShipCentroid[0]-centroid[0])**2) + ((ShipCentroid[1]-centroid[1])**2)) #euclidian distance b/w ship centroid and detection centroid
         
         #only do these things if the centroid of this detection is < threshold away from the ship centroid -- limit is purely for computational efficiency
@@ -452,6 +457,10 @@ def troubleshootdetection(model):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     r = model.detect([image], verbose=0)
     r = r[0]
+    
+    if troubleshooting:
+        visualize(image,r) 
+    
     return r,image
 
 

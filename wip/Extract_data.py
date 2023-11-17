@@ -12,6 +12,7 @@ import sys
 import math
 import bisect
 import time
+import statistics
 
 #important paths 
 ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -395,6 +396,39 @@ def PostProcess_OriginalData(OriginalData):
     ProcessedOriginalData = OriginalData[0:6]+[floesize]+[driftspeed]+[iceThickness]+[OriginalData[10]]
     return ProcessedOriginalData
 
+def convertRegionStats (regionStats,RegionDefinition):
+    prevRadi=0
+    prevAngl=0
+    regionIceFinalStats={}
+    regionIceFinalStats["RegionNames"]=[]
+    regionIceFinalStats["IceConcentratons_pct"]=[]
+    regionIceFinalStats["StandardDeviation"]=[]
+    for Radi in RegionDefinition["Radii"]:
+        for angl in RegionDefinition["AngleIncrements"]: 
+            # print("radi range",prevRadi,":",Radi)
+            # print("angle range",prevAngl,":",angl)
+            if len(regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}"].values()) > 0:
+                TotalArea=((angl-prevAngl)/360)*math.pi*((Radi**2)-(prevRadi**2))
+                # print(TotalArea, "\n\n")
+                IceArea=sum(regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}"].values())
+                IceConcentration=IceArea/TotalArea
+                StdDev=statistics.pstdev(list(regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}"].values()))
+                # print(regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}"])
+                # print(sum(regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}"].values()))
+                regionIceFinalStats["RegionNames"].append(f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}")
+                regionIceFinalStats["IceConcentratons_pct"].append(IceConcentration)
+                regionIceFinalStats["StandardDeviation"].append(StdDev)
+            else: 
+                print("nolength")
+                regionIceFinalStats["RegionNames"].append(f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}")
+                regionIceFinalStats["IceConcentratons_pct"].append(0)
+                ["StandardDeviation"].append(0)
+                
+            prevAngl=angl
+        prevRadi=Radi
+        prevAngl=0
+    
+    return regionIceFinalStats 
  
 def troubleshootdetection(model):
     #this is hard coding the image that we want to use for devel. purposes.
@@ -429,8 +463,11 @@ if __name__ == "__main__":
         for frameN in range(0,OriginalData.iat[-1,0]): #for range 0-number of frames (contained in cell )
             # r=detect(mdl,frameN,videofilename)
             r,image=troubleshootdetection(mdl) ## only use this for troubleshooting; remove later.
-            regionStats,regiondefinitions =processDetections(r)
+            regionStats,regiondefs =processDetections(r)
             # viz_centroids(image,regionStats['Centroids'])
+            
+            # Concert regionStats dict of dicts into ice concentration and ice size distribution data for each region;
+            convertRegionStats(regionStats,regiondefs) #TODO: finsih this and merge it with the processDetections function.
             
             # From Shameem: the speed recorded in these preliminary datafiles are the carriage speed; while the vessel is under DP control.
             # We need to consider the thrust --> speed conversion here to get the actual vessel speed.

@@ -76,7 +76,7 @@ def detect(model,frame_num,videopath):
     if troubleshooting:
         visualize(frame,r) 
         
-    return r
+    return [r,frame]
 
 def visualize(frame,r):
     mrcnn.visualize.display_instances(image=frame, 
@@ -288,7 +288,6 @@ def processDetections(r):
                     # print(R,"dist between",rbounds[0],"&",rbounds[1])
                     # print(theta,"deg between",abounds[0],"&",abounds[1]) 
                     
-                    regionStats[f"Region_{rbounds[0]}:{rbounds[1]}_{abounds[0]}:{abounds[1]}"][f'Index:{N0}']=400
                     if not f'Index:{N0}' in regionStats[f"Region_{rbounds[0]}:{rbounds[1]}_{abounds[0]}:{abounds[1]}"]: #initialize: set this index =1
                         regionStats[f"Region_{rbounds[0]}:{rbounds[1]}_{abounds[0]}:{abounds[1]}"][f'Index:{N0}']=1
                     else:
@@ -481,8 +480,8 @@ def viz_centroids(image,centroidlist,r,ShowCentroids=True,ShowRegions=True):
             plt.gca().add_patch(plt.Circle((shipx,shipy), radius*ShipLength, color='black', fill=False))
 
         addlines(plt,radius=2.5*ShipLength,equalangles=False,angleIncrement=[0,20,60,135,180],center=[shipx,shipy])
-        plt.xlim(0, image.shape[1])
-        plt.ylim(0, image.shape[0])
+        plt.xlim(0, image.shape[1]) ## if this isnt like this itll flip the image (mirror it) while it crops the image
+        plt.ylim(image.shape[0],0) ## if this isnt like this itll flip the image (mirror it) while it crops the image
         
 
     plt.show()
@@ -503,17 +502,18 @@ if __name__ == "__main__":
         videofilename=correspondingfiles[forcefilename]
         OriginalData=GetCSVData(forcefilename) #returns a pandas dataframe.
         for frameN in range(0,OriginalData.iat[-1,0]): #for range 0-number of frames (contained in cell )
-            # r=detect(mdl,frameN,videofilename)
+            # r,image=detect(mdl,frameN,videofilename)
             r,image=troubleshootdetection(mdl) ## only use this for troubleshooting; remove later.
             regionStats,regiondefs =processDetections(r)
-            viz_centroids(image,regionStats['Centroids'],r,ShowRegions=False)
-            
+            # viz_centroids(image,regionStats['Centroids'],r)
+            p=time.time()
             # Concert regionStats dict of dicts into ice concentration and ice size distribution data for each region;
-            convertRegionStats(regionStats,regiondefs) #TODO: finsih this and merge it with the processDetections function.
+            regionIceFinalStats=convertRegionStats(regionStats,regiondefs) #TODO: finsih this and merge it with the processDetections function.
             
             # From Shameem: the speed recorded in these preliminary datafiles are the carriage speed; while the vessel is under DP control.
             # We need to consider the thrust --> speed conversion here to get the actual vessel speed.
             ProcessedOriginalData=PostProcess_OriginalData(OriginalData[:frameN+1].values.tolist()[0])
+            print("time",time.time()-p)
 
             #save a csv file for every frame - overwriting the previous so we can pickup where we left off.
             save_newCSV(ProcessedOriginalData,regionStats,baseFilename) #not allowed to grab the column names as the first row; needs to be row 1

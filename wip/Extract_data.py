@@ -294,7 +294,7 @@ def processDetections(r):
                     else:
                         regionStats[f"Region_{rbounds[0]}:{rbounds[1]}_{abounds[0]}:{abounds[1]}"][f'Index:{N0}']+=1
                 
-        print(time.time()-t0) #takes about 3s per mask so dending on the number of masks in the region
+        print("Mask Number:",N0," took:",time.time()-t0," seconds") #takes about 3s per mask so dending on the number of masks in the region
     return [regionStats, RegionDefinition]
 
 def BinarySearch(searchlist,R): 
@@ -438,11 +438,55 @@ def troubleshootdetection(model):
     r = r[0]
     return r,image
 
-def viz_centroids(image,centroidlist):
+
+def addlines(plt,radius,angleIncrement,center,equalangles=True):
+    ##if equalangles is true then angle increment should be an integer, otherwise
+    angles=[]
+    if equalangles: 
+        if isinstance(angleIncrement, float):
+            print("angle increment should be integer")
+            exit()
+        for n in range(1,round(360/angleIncrement)):
+            angles.append(n*math.radians(angleIncrement))
+    
+    if not equalangles:
+        for deg in angleIncrement: 
+            angles.append(math.radians(deg))
+            angles.append(math.radians(-deg))
+    
+    for angle in angles: 
+        plt.plot([center[0],center[0]-radius*math.cos(angle)],[center[1],center[1]+radius*math.sin(angle)])
+
+
+def viz_centroids(image,centroidlist,r,ShowCentroids=True,ShowRegions=True):
     import matplotlib.pyplot as plt
+    import pylab
     plt.imshow(image)
-    for i in centroidlist: 
-        plt.plot(i[0],i[1],'rx',markersize=5)
+    
+    masks=r['masks']
+    classes=r['class_ids']
+    
+    shipIndex=np.where(classes==CLASS_NAMES.index('Ship'))[0]
+    shipx,shipy,ShipLength=getCentroid(masks[:, :, shipIndex[0]][:, :, np.newaxis],GetShipLength=True)
+    
+    if ShowCentroids:
+        n=0
+        for i in centroidlist: 
+            plt.plot(i[0],i[1],'rx',markersize=5)
+            pylab.text(i[0]+30,i[1],n)
+            n+=1
+    
+    if ShowRegions:
+        radii=[0.5,1,2.5]
+        for radius in radii:
+            plt.gca().add_patch(plt.Circle((shipx,shipy), radius*ShipLength, color='black', fill=False))
+
+        addlines(plt,radius=2.5*ShipLength,equalangles=False,angleIncrement=[0,20,60,135,180],center=[shipx,shipy])
+        
+    plt.xlim(0, image.shape[1])
+    plt.ylim(0, image.shape[0])
+    plt.show()
+    
     plt.show()
 
 if __name__ == "__main__": 
@@ -464,7 +508,7 @@ if __name__ == "__main__":
             # r=detect(mdl,frameN,videofilename)
             r,image=troubleshootdetection(mdl) ## only use this for troubleshooting; remove later.
             regionStats,regiondefs =processDetections(r)
-            # viz_centroids(image,regionStats['Centroids'])
+            viz_centroids(image,regionStats['Centroids'],r)
             
             # Concert regionStats dict of dicts into ice concentration and ice size distribution data for each region;
             convertRegionStats(regionStats,regiondefs) #TODO: finsih this and merge it with the processDetections function.

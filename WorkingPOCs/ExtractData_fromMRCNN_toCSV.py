@@ -363,11 +363,12 @@ def save_newCSV(OriginalData, processedData,filename):
     F=list(OriginalData["Names"])
     F_data=list(OriginalData["Data"])
     S=list(processedData["RegionNames"])
-    S_tall=[[f"{i} - Ice Conc",f"{i} - StdDev"] for i in S]
+    S_tall=[[f"{i} - Ice Conc",f"{i} - Mean",f"{i} - StdDev"] for i in S]
     S_flattened=[item for sublist in S_tall for item in sublist]
     S_flattened_data=[]
     for i in range(0,len(list(processedData["RegionNames"]))):
         S_flattened_data.append(processedData["IceConcentratons_pct"][i])
+        S_flattened_data.append(processedData["Mean"][i])
         S_flattened_data.append(processedData["StandardDeviation"][i])
     
     ListofHeading_keys=F+S_flattened
@@ -424,6 +425,7 @@ def convertRegionStats (regionStats,RegionDefinition):
     regionIceFinalStats["RegionNames"]=[]
     regionIceFinalStats["IceConcentratons_pct"]=[]
     regionIceFinalStats["StandardDeviation"]=[]
+    regionIceFinalStats["Mean"]=[]
     for Radi in RegionDefinition["Radii"]:
         for angl in RegionDefinition["AngleIncrements"]: 
             # print("radi range",prevRadi,":",Radi)
@@ -434,16 +436,19 @@ def convertRegionStats (regionStats,RegionDefinition):
                 IceArea=sum(regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}"].values())
                 IceConcentration=IceArea/TotalArea
                 StdDev=statistics.pstdev(list(regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}"].values()))
+                Mean=statistics.mean(list(regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}"].values()))
                 # print(regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}"])
                 # print(sum(regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}"].values()))
                 regionIceFinalStats["RegionNames"].append(f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}")
                 regionIceFinalStats["IceConcentratons_pct"].append(IceConcentration)
                 regionIceFinalStats["StandardDeviation"].append(StdDev)
+                regionIceFinalStats["Mean"].append(Mean)
             else: 
                 print("nolength")
                 regionIceFinalStats["RegionNames"].append(f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}")
                 regionIceFinalStats["IceConcentratons_pct"].append(0)
                 ["StandardDeviation"].append(0)
+                regionIceFinalStats["Mean"].append(0)
                 
             prevAngl=angl
         prevRadi=Radi

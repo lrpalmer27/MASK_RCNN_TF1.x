@@ -366,23 +366,25 @@ def save_newCSV(OriginalData, processedData,filename):
         S_flattened_data.append(processedData["StandardDeviation"][i])
     
     ListofHeading_keys=F+S_flattened
-    ListofEverything=F_data+S_flattened_data
+    ListofAllData=F_data+S_flattened_data
     
-    together=dict(zip(ListofHeading_keys,ListofEverything))
+    together=dict(zip(ListofHeading_keys,ListofAllData))
     
     # Check if the csv file exists yet?
     if not os.path.exists(filepath): #if it doesnt exist yet then put in the basics
-        df=pd.DataFrame()
         for i in list(together.keys()):
             temp=together[i]
             together[i]=[0,temp]
+        df=pd.DataFrame(together)
     else: 
         df=pd.read_csv(filepath) 
     
         # Now we can add the original data, and new data; frame by frame (this fcn gets called each frame)
         # new=df.append(together)
         df.loc[len(df)] = together
-        df.to_csv(filepath) #saves the new file each round incase there is an error we dont want it to be living in memory forever.
+    
+    # print(df)    
+    df.to_csv(filepath) #saves the new file each round incase there is an error we dont want it to be living in memory forever.
 
 def PostProcess_OriginalData(OriginalData):
     #Format for the original data input list;

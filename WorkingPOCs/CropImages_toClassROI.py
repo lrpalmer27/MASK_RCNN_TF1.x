@@ -19,7 +19,7 @@ import sys
 #paths
 ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT_DIR)
-from wip import  TrainIceShip
+from WorkingPOCs import  TrainIceShip
 _TestDir= ROOT_DIR+"\\IceData\\test_imgs\\"
 _saveToDir=ROOT_DIR+"\\IceData\\stage1_save\\"
 _weightspth=ROOT_DIR+"\\mask_rcnn_iceshiptf1config_0050.h5"

@@ -13,23 +13,33 @@ import os
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+import skimage.draw
+from skimage.io import imsave
 
 # load the class label names from disk, one label per line
 # CLASS_NAMES = open("coco_labels.txt").read().strip().split("\n")
 
 ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLASS_NAMES = ['BG', 'Ice','Ship']
-TestDir="\\IceData\\test_imgs\\"
-# TestDir="\\IceData\\stage1_save\\"
-TrainedWeights=ROOT_DIR+"\\mask_rcnn_iceshiptf1config_0050.h5"
+TestDir=os.path.join(ROOT_DIR,'IceData','test_imgs')
+TrainedWeights=os.path.join(ROOT_DIR,'mask_rcnn_iceshiptf1config_0050.h5')"
 
-def visualize (image,r):
-    mrcnn.visualize.display_instances(image=image, 
-                                    boxes=r['rois'], 
-                                    masks=r['masks'], 
-                                    class_ids=r['class_ids'], 
-                                    class_names=CLASS_NAMES, 
-                                    scores=r['scores'])
+def visualize (image,r,save=False):
+    if save==False:
+        mrcnn.visualize.display_instances(image=image, 
+                                        boxes=r['rois'], 
+                                        masks=r['masks'], 
+                                        class_ids=r['class_ids'], 
+                                        class_names=CLASS_NAMES, 
+                                        scores=r['scores'])
+    else: 
+        #this saves the file in the IceData dir to ref later (cant have things pop up on alliance can clusters)
+        masks=r['masks']
+        nmask = (np.sum(masks, -1, keepdims=True) >= 1)
+        ngray = skimage.color.gray2rgb(skimage.color.rgb2gray(image)) * 255
+        nsplash = np.where(nmask, image,ngray).astype(np.uint8)
+        imsave(os.path.join(ROOT_DIR,'test.png'),nsplash)
+        pass 
 
 def processDetections(r): 
     #### this is a staging ground to develop this function and move it back to the Extract_data.py file.
@@ -154,9 +164,10 @@ model.load_weights(filepath=TrainedWeights,
                    by_name=True)
 
 # load the input image, convert it from BGR to RGB channel
-Test_Dir=os.listdir(ROOT_DIR+ TestDir) #lists the kangaroo test image dir
-randomImg=Test_Dir[random.randint(0,len(Test_Dir)-1)]
-image = cv2.imread(ROOT_DIR+TestDir+randomImg) #picks a random image in the kangaroo test image dir.
+Test_Dir_list=os.listdir(TestDir) #lists the kangaroo test image dir
+randomImg=Test_Dir_list[random.randint(0,len(Test_Dir_list)-1)]
+randimgpath=os.path.join(TestDir,randomImg)
+image = cv2.imread(randimgpath) #picks a random image in the kangaroo test image dir.
 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
 # Perform a forward pass of the network to obtain the results
@@ -168,6 +179,6 @@ r = r[0]
 # processDetections(r)
 
 # Visualize the detected objects.
-print('Chosen random file to display with mask predictions: ',randomImg)
+# print('Chosen random file to display with mask predictions: ',randomImg)
 
-visualize (image,r)
+visualize (image,r,save=True) #save fcn doesnt work yet

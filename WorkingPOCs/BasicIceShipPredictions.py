@@ -22,7 +22,7 @@ from skimage.io import imsave
 ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLASS_NAMES = ['BG', 'Ice','Ship']
 TestDir=os.path.join(ROOT_DIR,'IceData','test_imgs')
-TrainedWeights=os.path.join(ROOT_DIR,'mask_rcnn_iceshiptf1config_0050.h5')"
+TrainedWeights=os.path.join(ROOT_DIR,'mask_rcnn_iceshiptf1config_0050.h5')
 
 def visualize (image,r,save=False):
     if save==False:

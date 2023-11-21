@@ -11,50 +11,31 @@ import numpy as np
 import skimage.draw
 
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
-restarting = True #Change this to True if you want to grab the saved weights in the .logs dir and keep training.
-trainbig=True #change to false if you want to train the small ice model.
+restarting = False #Change this to True if you want to grab the saved weights in the .logs dir and keep training.
+ConfigName="mrcnntf114_small"
+dataset_path=os.path.join(ROOT_DIR,'IceData','NRC_data_multi_stage_big')
+model_path = os.path.join(ROOT_DIR,'mrcnntf114_big_weights.h5') #path where you want model saved
 
 # Import Mask RCNN
 sys.path.append(ROOT_DIR)  # To find local version of the library
 from mrcnn.config import Config
 from mrcnn import model as modellib, utils
 
-def train_bigicemodel_initn():
-    ##paths to important things
-    dataset_path=ROOT_DIR+"\\IceData\\NRC_data_multi_stage_big\\" #path to dataset directory - sub dirs should be train and val
-    model_path = ROOT_DIR+'mrcnntf114_big_weights.h5' #path where you want model saved
-    global maxdim
-    maxdim=1024 #1024 px for images -- config setting
-    global ConfigName
-    ConfigName="mrcnntf114_big"
-    return [dataset_path,model_path]
-
-def train_smallicemodel_initn():
-    ##paths to important things
-    dataset_path=ROOT_DIR+"\\IceData\\NRC_data_multi_stage_small\\" #path to dataset directory - sub dirs should be train and val
-    model_path = ROOT_DIR+'mrcnntf114_small_weights.h5' #path where you want model saved
-    global maxdim
-    maxdim=300 #300 px for images -- config setting
-    global ConfigName
-    ConfigName="mrcnntf114_small"
-    return [dataset_path,model_path]
-
 ##"hiding" these paths down here; shouldnt regularily change, keeping away from top of script.
 COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5") #path to coco weights
-DEFAULT_LOGS_DIR = ROOT_DIR+"\\.logs" #path to directory to store logs:
+DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR,'logs') #path to directory to store logs:
 
 
 ############################################################
 #  Configurations
 ############################################################
 
-
 class IceConfig(Config):
     """Configuration for training on the toy  dataset.
     Derives from the base Config class and overrides some values.
     """
     # Give the configuration a recognizable name
-    NAME = ConfigName #var dont change
+    NAME = 'mrcnntf114_big' #var dont change
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
@@ -72,7 +53,7 @@ class IceConfig(Config):
     DETECTION_MIN_CONFIDENCE = 0.9
     
     #since our images are huge
-    IMAGE_MAX_DIM=maxdim
+    IMAGE_MAX_DIM=1024
 
 ############################################################
 #  Dataset
@@ -218,11 +199,6 @@ def train(model,dataset_path):
                 layers='heads')
 
 if __name__ == '__main__':
-    if trainbig: 
-        dataset_path,model_path=train_bigicemodel_initn()
-    else: 
-        dataset_path,model_path = train_smallicemodel_initn()
-    
     config = IceConfig()
     config.display()
     model = modellib.MaskRCNN(mode="training", config=config,model_dir=DEFAULT_LOGS_DIR)
@@ -231,7 +207,7 @@ if __name__ == '__main__':
         weights_path = model.find_last() #uncomment if need to re-start after pausing training.
         model.load_weights(weights_path, by_name=True)
     else: 
-        weights_path = ROOT_DIR+"\\mask_rcnn_coco.h5" 
+        weights_path = os.path.join(ROOT_DIR,"mask_rcnn_coco.h5")
         model.load_weights(weights_path, by_name=True, exclude=["mrcnn_class_logits", "mrcnn_bbox_fc","mrcnn_bbox", "mrcnn_mask"])
 
     train(model,dataset_path)  

@@ -35,7 +35,7 @@ class IceConfig(Config):
     Derives from the base Config class and overrides some values.
     """
     # Give the configuration a recognizable name
-    NAME = 'mrcnntf114_big' #var dont change
+    NAME = 'mrcnntf114_big_py370test' #var dont change
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.

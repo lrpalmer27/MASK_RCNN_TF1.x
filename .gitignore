@@ -60,3 +60,5 @@ ENV/
 *.mkv
 
 logs
+
+IceData/NRC_dataset

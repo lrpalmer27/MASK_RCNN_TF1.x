@@ -36,7 +36,7 @@ if __name__ == '__main__':
     for vid in videos:
         vids_frames[f"{vid}"]=NumFrames(videos_dir+vid)
     
-    num_train_images=300
+    num_train_images=500
     
     randomTrainVids=[random.choice(videos) for _ in range(0,num_train_images)]
 

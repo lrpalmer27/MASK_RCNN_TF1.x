@@ -22,8 +22,8 @@ from skimage.io import imsave
 ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLASS_NAMES = ['BG', 'Ice','Ship']
 TestDir=os.path.join(ROOT_DIR,'IceData','test_imgs')
-# TrainedWeights=os.path.join(ROOT_DIR,'mask_rcnn_iceshiptf1config_0050.h5')
-TrainedWeights=os.path.join(ROOT_DIR,'mrcnntf114_big_weights.h5')
+TrainedWeights=os.path.join(ROOT_DIR,'mask_rcnn_iceshiptf1config_0050.h5')
+# TrainedWeights=os.path.join(ROOT_DIR,'mrcnntf114_big_weights.h5')
 
 def visualize (image,r,save=False):
     if save==False:
@@ -180,6 +180,6 @@ r = r[0]
 # processDetections(r)
 
 # Visualize the detected objects.
-# print('Chosen random file to display with mask predictions: ',randomImg)
+print('\n\nChosen random file to display with mask predictions: ',randomImg)
 
 visualize (image,r,save=False) #save fcn doesnt work yet

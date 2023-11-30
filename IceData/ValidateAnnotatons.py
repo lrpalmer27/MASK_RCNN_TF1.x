@@ -34,8 +34,12 @@ def VIA_annotation_val(ROOT_DIR,_annotations_dir,RegionAttributeName):
     # We mostly care about the x and y coordinates of each region
     # Note: In VIA 2.0, regions was changed from a dict to a list.
     try:
-        annotations = json.load(open(os.path.join(_annotations_dir,'via_region_data.json')))   
-        annotations = list(annotations.values())  # don't need the dict keys
+        # annotations = json.load(open(os.path.join(_annotations_dir,'via_region_data.json')))   
+        # annotations = list(annotations.values())  # don't need the dict keys
+        annotations = json.load(open(os.path.join(_annotations_dir,'via_region_data_prjct.json'))) 
+        a2=annotations['_via_img_metadata']
+        annotations=list(a2.values())
+        
     except: 
         print("\n \n \n Ensure json annotatons file is labelled: via_region_data.json (not found) \n \n \n")
         exit()

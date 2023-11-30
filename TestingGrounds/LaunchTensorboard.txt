@@ -1,0 +1,5 @@
+using the .py370venv
+run in cmd: 
+tensorboard --logdir='logs\iceshiptf1config20231108T1530_currentbest'
+
+Open localhost:6006 in a browser.

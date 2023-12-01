@@ -11,12 +11,12 @@ import json
 #paths
 def _initpaths ():
     ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
-    _annotations_dir=ROOT_DIR+'\\IceData\\NRC_data_multi_stage_big\\train\\'
+    _annotations_dir=ROOT_DIR+'\\IceData\\NRC_data_multi_stage_big'
     # _annotations_dir=ROOT_DIR+'\\IceData\\NRC_data_multi_stage_small\\train\\'
     RegionAttributeName='Object'
     return [ROOT_DIR,_annotations_dir,RegionAttributeName]
 
-def VIA_annotation_val(ROOT_DIR,_annotations_dir,RegionAttributeName): 
+def VIA_annotation_val(_annotations_dir,RegionAttributeName): 
     # Load annotations
     # VGG Image Annotator (up to version 1.6) saves each image in the form:
     # { 'filename': '28503151_5b5b7ec140_b.jpg',
@@ -81,5 +81,6 @@ def VIA_annotation_val(ROOT_DIR,_annotations_dir,RegionAttributeName):
             
 if __name__ == '__main__':
     ROOT_DIR,_annotations_dir,RegionAttributeName = _initpaths()
-    VIA_annotation_val(ROOT_DIR,_annotations_dir,RegionAttributeName)
+    VIA_annotation_val(_annotations_dir+"//train",RegionAttributeName) #checks annotations in train set
+    VIA_annotation_val(_annotations_dir+"//val",RegionAttributeName) #checks annotations in val set
     

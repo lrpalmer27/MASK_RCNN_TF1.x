@@ -533,7 +533,7 @@ if __name__ == "__main__":
         videofilename=correspondingfiles[forcefilename]
         OriginalData=GetCSVData(forcefilename) #returns a pandas dataframe.
         for frameN in range(0,OriginalData.iat[-1,0]): #for range 0-number of frames (contained in cell )
-            # r,image=detect(mdl,frameN,videofilename)
+            # r,image=detect(mdl,frameN,videofilename) ## uncomment when ready to run on the full vid
             r,image=troubleshootdetection(mdl) ## only use this for troubleshooting; remove later.
             regionStats,regiondefs =processDetections(r)
             if troubleshooting:#only activates if we are in troubleshooting mode (defined above)

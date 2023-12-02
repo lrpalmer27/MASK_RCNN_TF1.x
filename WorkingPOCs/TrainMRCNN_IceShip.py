@@ -12,7 +12,6 @@ import skimage.draw
 
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 restarting = False #Change this to True if you want to grab the saved weights in the .logs dir and keep training.
-ConfigName="mrcnntf114_small"
 dataset_path=os.path.join(ROOT_DIR,'IceData','NRC_data_multi_stage_big')
 model_path = os.path.join(ROOT_DIR,'mrcnntf114_big_weights.h5') #path where you want model saved
 
@@ -35,19 +34,17 @@ class IceConfig(Config):
     Derives from the base Config class and overrides some values.
     """
     # Give the configuration a recognizable name
-    NAME = 'mrcnntf114_big_py370test' #var dont change
+    NAME = 'playtest'
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
     IMAGES_PER_GPU = 1
-    
-    # IMAGES_PER_GPU = 2
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 1 + 1 # Background + Ice + Ship
 
     # Number of training steps per epoch
-    STEPS_PER_EPOCH = 100 #100
+    STEPS_PER_EPOCH = 75 #100
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
@@ -203,7 +200,7 @@ def train(model,dataset_path):
     print("Training network heads")
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=20,
+                epochs=400,
                 layers='heads')
 
 if __name__ == '__main__':

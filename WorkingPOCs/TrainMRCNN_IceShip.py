@@ -9,6 +9,7 @@ import sys
 import json
 import numpy as np
 import skimage.draw
+import tensorflow as tf
 
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 restarting = False #Change this to True if you want to grab the saved weights in the .logs dir and keep training.
@@ -207,6 +208,10 @@ if __name__ == '__main__':
     config = IceConfig()
     config.display()
     model = modellib.MaskRCNN(mode="training", config=config,model_dir=DEFAULT_LOGS_DIR)
+    
+    print("\n\n", tf.config.experimental.list_physical_devices())
+    print(tf.test.is_gpu_available())
+    print(tf.test.gpu_device_name(),"\n\n")
     
     if restarting: 
         weights_path = model.find_last() #uncomment if need to re-start after pausing training.

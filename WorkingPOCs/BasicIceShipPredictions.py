@@ -3,7 +3,6 @@ import os
 ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT_DIR)
 
-
 import mrcnn
 import mrcnn.config
 import mrcnn.model
@@ -22,8 +21,6 @@ from skimage.io import imsave
 ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLASS_NAMES = ['BG', 'Ice','Ship']
 TestDir=os.path.join(ROOT_DIR,'IceData','test_imgs')
-# TrainedWeights=os.path.join(ROOT_DIR,'logs','iceshiptf1config20231108T1530_currentbest','mask_rcnn_iceshiptf1config_0050.h5')
-# TrainedWeights=os.path.join(ROOT_DIR,'logs','supercomp_dec02','mask_rcnn_maindec02_trainfinal_0321.h5')
 TrainedWeights=os.path.join(ROOT_DIR,'logs','super_dec04_lowsteps','mask_rcnn_maindec05_lowsteps_0050.h5')
 
 def visualize (image,r,save=False):
@@ -42,84 +39,6 @@ def visualize (image,r,save=False):
         nsplash = np.where(nmask, image,ngray).astype(np.uint8)
         imsave(os.path.join(ROOT_DIR,'test.png'),nsplash)
         pass 
-
-def processDetections(r): 
-    #### this is a staging ground to develop this function and move it back to the Extract_data.py file.
-    ## the point of this function is to record the concentration of ice in certain areas relative to the ship;;; NOTE: does rely on the ship being detected.....and being detected correctly.
-    masks=r['masks']
-    boxes=r['rois']
-    classes = r['class_ids']
-    class_ids=classes.tolist()
-    scores=r['scores'] 
-    
-    # Find ship mask and make sure there is only one ship "found"
-    i=CLASS_NAMES.index('Ship')
-    shipIndex=np.where(classes==i)[0]
-    
-    if shipIndex.shape[0] != 1: 
-        ## TODO: Implement some kind of way to pick the highest probability ship mask as "the" ship
-        print("\n\n we have identified more than one ship \n\n")
-        exit() #be dramatic incase i forget to do this
-        None
-    
-    # Find direction of ship -- find where the mask comes to a point.
-    t=classes[shipIndex[0]]
-    shipRoi=boxes[50]
-    shipclassid=classes[50]
-    sscore=scores[50]
-    shipmask = masks[:, :, shipIndex[0]][:, :, np.newaxis]
-    
-    out={"rois":np.array([shipRoi]),
-        "class_ids":np.array([class_ids[50]]),
-        "scores":np.array([sscore]),
-        "masks":shipmask}
-    
-    ## area of this mask
-    shiparea=np.reshape(shipmask, (-1, shipmask.shape[-1])).astype(np.float32).sum()
-        
-    # visualize(image,out) #this is here to viz the boat mask only
-    img=np.where(shipmask,0,image).astype(np.uint8) 
-         
-    x,y,ShipLength=getcentroid(shipmask)
-    centroid=np.array([x,y])
-    
-    #this visualizes the centroid to prove that its in the right spot.
-    # plt.imshow(img)
-    # plt.plot(x,y,'rx',markersize=5)
-    # plt.show()
-    
-    ##get the direction
-    p0,p1,ptend=getshipdrxn(shipmask,centroid,radius=2.5*ShipLength)
-    
-    #show the direction
-    fig=plt.imshow(img)
-    # fig=plt.figure(img)
-    plt.plot(p0[0],p0[1],'rx',markersize=5)
-    plt.plot(ptend[0],ptend[1],'cx',markersize=5)
-    plt.arrow(p0[0],p0[1],p1[0],p1[1],color='g')
-    # circle1 = plt.Circle((p0[0],p0[1]), 0.5*ShipLength, color='g',fill=False)
-    # circle2=plt.Circle((p0[0],p0[1]), 2*ShipLength, color='r', fill=False)
-    # plt.gca().add_patch(circle1)
-    # plt.gca().add_patch(circle2)
-
-    # ax_polar = fig.add_axes(rect, polar=True, frameon=False)
-    ax_polar=fig.add
-    ax_polar.set_rmax(2.0)
-    ax_polar.grid(True)
-    
-    plt.show()
-    
-    print("Crossing guard")
-    ## TODO implement these remaining steps: 
-    # 1) make a method to determine ship direction
-    # 2) add cylindrical polar coordinate system to the model, aligned in the direction the ship is pointing
-    # 3) divide cyl coordinates into regions defined by azimuth angle +- from true heading, and radius from centroid of ship mask
-    # 4) Get stats of ice present in the above defined regions: Specifically surface area of ice (floes), SA brash ice, area of region (total), assuming gaussian distribution of ice get std dev, 
-    
-    ## Get total mask area in pixels
-    area=np.reshape(r['masks'], (-1, r['masks'].shape[-1])).astype(np.float32).sum()
-  
-    None
 
 def getshipdrxn(mask,centroid,radius):
     ## TODO add way to consider alternat headings here
@@ -178,8 +97,6 @@ r = model.detect([image], verbose=0)
 
 # Get the results for the first image.
 r = r[0]
-
-# processDetections(r)
 
 # Visualize the detected objects.
 print('\n\nChosen random file to display with mask predictions: ',randomImg)

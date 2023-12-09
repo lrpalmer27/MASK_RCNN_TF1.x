@@ -21,7 +21,9 @@ from skimage.io import imsave
 ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLASS_NAMES = ['BG', 'Ice','Ship']
 TestDir=os.path.join(ROOT_DIR,'IceData','test_imgs')
-TrainedWeights=os.path.join(ROOT_DIR,'logs','super_dec04_lowsteps','mask_rcnn_maindec05_lowsteps_0050.h5')
+# TrainedWeights=os.path.join(ROOT_DIR,'logs','super_dec04_lowsteps','mask_rcnn_maindec05_lowsteps_0050.h5')
+TrainedWeights=os.path.join(ROOT_DIR,'logs','supercompDec08','mask_rcnn_dec08_moreimgs_0100.h5')
+
 
 def visualize (image,r,save=False):
     if save==False:
@@ -39,29 +41,6 @@ def visualize (image,r,save=False):
         nsplash = np.where(nmask, image,ngray).astype(np.uint8)
         imsave(os.path.join(ROOT_DIR,'test.png'),nsplash)
         pass 
-
-def getshipdrxn(mask,centroid,radius):
-    ## TODO add way to consider alternat headings here
-    # this needs to return the DELTA ONLY
-    p0=centroid
-    ptend=[centroid[0]-radius,centroid[1]] #this returns a point, the distance of 1 radius away
-    p1=[-radius,0] #this needs to be updated to account for variations in heading of the masked ship
-    return [p0,p1,ptend]
-
-def getcentroid(m): 
-    #m is one mask
-    ##get xy coordinates of each item, then avg them
-    horiz = np.where(np.any(m, axis=0))[0]
-    verti = np.where(np.any(m, axis=1))[0]
-    
-    hmax,hmin = horiz[[0, -1]]
-    
-    ShipL=abs(hmax-hmin) #shiplength in px
-
-    hori_mean=np.mean(horiz)
-    verti_mean=np.mean(verti)
-
-    return [hori_mean,verti_mean,ShipL]
 
 class SimpleConfig(mrcnn.config.Config):
     # Give the configuration a recognizable name
@@ -88,7 +67,7 @@ model.load_weights(filepath=TrainedWeights,
 Test_Dir_list=os.listdir(TestDir) #lists the kangaroo test image dir
 randomImg=Test_Dir_list[random.randint(0,len(Test_Dir_list)-1)]
 randimgpath=os.path.join(TestDir,randomImg)
-randimgpath=r"C:\Users\logan\Desktop\MEng\Mask_RCNN\IceData\test_imgs\25m_8ths_1p2kts_0p6m_0deg_001_c_overhead_frame299.png"
+randimgpath=r"C:\Users\logan\Desktop\MEng\Mask_RCNN\IceData\test_imgs\100m_dist_9ths_1p2kts_0p4m_0deg_001_c_overhead_frame361.png"
 image = cv2.imread(randimgpath) #picks a random image in the kangaroo test image dir.
 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 

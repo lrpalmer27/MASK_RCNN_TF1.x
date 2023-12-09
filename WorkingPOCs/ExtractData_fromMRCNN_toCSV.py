@@ -1,41 +1,52 @@
+import sys
+import os
+##use this section mrcnn not installed
+ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
+sys.path.append(ROOT_DIR)
+# end
 import mrcnn
 from mrcnn.config import Config
 import mrcnn.model
 import mrcnn.visualize
 import cv2
-import os
 import random
 import re
 import pandas as pd
 import numpy as np
-import sys
 import math
 import bisect
 import time
 import statistics
+import matplotlib
+import matplotlib.pyplot as plt
+import pylab
+
 
 #important paths 
-ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CLASS_NAMES = ['BG', 'Ice','Ship']
-TestDir="\\IceData\\test_imgs\\"
-TrainedWeights=ROOT_DIR+"\\mask_rcnn_iceshiptf1config_0050.h5"
-DEFAULT_LOGS_DIR = ROOT_DIR+"\\.logs"
-_rawforceData=ROOT_DIR+"\\.rawForcedata"
-_rawvidData=ROOT_DIR+"\\.rawVideoData"
-_processedData=ROOT_DIR+'\\'+'.processedData'
-regex="\d{2,3}p?\d?m_\dths_\d+p\d+kts_\d?p?\dm_\ddeg_\d{3}"
-troubleshooting=False
+if __name__ == "__main__": 
+    ##these need to go here
+    ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    CLASS_NAMES = ['BG', 'Ice','Ship']
+    TestDir="\\IceData\\test_imgs\\"
+    TrainedWeights=os.path.join(ROOT_DIR,'logs','super_dec04_lowsteps','mask_rcnn_maindec05_lowsteps_0050.h5')
+    DEFAULT_LOGS_DIR = ROOT_DIR+"\\.logs"
+    _rawforceData=ROOT_DIR+"\\.rawForcedata"
+    _rawvidData=ROOT_DIR+"\\.rawVideoData"
+    _processedData=ROOT_DIR+'\\'+'.processedData'
+    regex="\d{2,3}p?\d?m_\dths_\d+p\d+kts_\d?p?\dm_\ddeg_\d{3}"
+    troubleshooting=True
+    ### end important paths  
 
-class loadconfig(Config):
-    # Give the configuration a recognizable name
-    NAME = "Ice_ship_interference"
-    
-    # set the number of GPUs to use along with the number of images per GPU
-    GPU_COUNT = 1
-    IMAGES_PER_GPU = 1
+    class loadconfig(Config):
+        # Give the configuration a recognizable name
+        NAME = "Ice_ship_interference"
+        
+        # set the number of GPUs to use along with the number of images per GPU
+        GPU_COUNT = 1
+        IMAGES_PER_GPU = 1
 
-	# Number of classes = number of classes + 1 (+1 for the background). The background class is named BG
-    NUM_CLASSES = len(CLASS_NAMES)
+        # Number of classes = number of classes + 1 (+1 for the background). The background class is named BG
+        NUM_CLASSES = len(CLASS_NAMES)
 
 def init_model(config):
     # Initialize the Mask R-CNN model for inference and then load the weights.
@@ -85,10 +96,7 @@ def visualize(frame,r):
                                         class_ids=r['class_ids'], 
                                         class_names=CLASS_NAMES, 
                                         scores=r['scores'])
-    
-def saveResults(frame,r):
-    #do things here to save data into processed csv format for each frame of each video.
-    print("placeholder")
+    None
     
 def listbothdirs(): 
     v=os.listdir(_rawvidData)
@@ -182,7 +190,7 @@ def validateSize(videoDir, ForceDir):
     # TODO: with the corresponding files dictionary here we could definitely streamline the first stage of this function.....
     return [different,correspondingfiles]
 
-def processDetections(r): 
+def processDetections(r,CLASS_NAMES=['BG', 'Ice','Ship'],verbose=True): 
     # this function will process the results from the detected model (r) then will pass the new out to then be combined
     # and saved into the updated csv format to pass along to the training stage.
     # this is done on a per frame basis
@@ -212,6 +220,8 @@ def processDetections(r):
     # Open variables of results that we will use later       
     masks=r['masks']
     classes=r['class_ids']
+    scores=r['scores']
+    
     
     # Get the indecies of "ship" detections (predictions)
     shipIndex=np.where(classes==CLASS_NAMES.index('Ship'))[0]
@@ -221,6 +231,17 @@ def processDetections(r):
     if shipIndex.shape[0] != 1:
         ## TODO: Implement the notes above, for now skip this entire frame.
         print("\n\n we have identified more than one ship \n\n")
+        currentBest=shipIndex[0]
+        for i in shipIndex:
+            #get prediction confidence and take highest one.
+            if scores[currentBest]<scores[i]:
+                currentBest=shipIndex[i]
+            else:
+                None
+            ##this will set the 'ship' mask (where the polar coords are based) to the higher of the 
+            ## two probabilities; but the second (or more) masks will be 
+        
+        
         return  "something here" ## add somethign here that exits out of the frame
     
     # Assuming we only have one ship detected now (not zero not > 1)
@@ -297,8 +318,10 @@ def processDetections(r):
                         regionStats[f"Region_{rbounds[0]}:{rbounds[1]}_{abounds[0]}:{abounds[1]}"][f'Index:{N0}']=1
                     else:
                         regionStats[f"Region_{rbounds[0]}:{rbounds[1]}_{abounds[0]}:{abounds[1]}"][f'Index:{N0}']+=1
-                
-        print("Mask Number:",N0," took:",time.time()-t0," seconds") #takes about 3s per mask so dending on the number of masks in the region
+        
+        if verbose:        
+            print("Mask Number:",N0," took:",time.time()-t0," seconds") #takes about 3s per mask so dending on the number of masks in the region
+            
     return [regionStats, RegionDefinition]
 
 def BinarySearch(searchlist,R): 
@@ -488,10 +511,11 @@ def addlines(plt,radius,angleIncrement,center,equalangles=True):
         plt.plot([center[0],center[0]-radius*math.cos(angle)],[center[1],center[1]+radius*math.sin(angle)])
 
 
-def viz_centroids(image,centroidlist,r,ShowCentroids=True,ShowRegions=True):
-    import matplotlib.pyplot as plt
-    import pylab
-    plt.imshow(image)
+def viz_centroids(centroidlist,r,plt=None,CLASS_NAMES=['BG', 'Ice','Ship'],image=None,ShowCentroids=True,ShowRegions=True,showimg=True):
+    imagebased=False
+    if not image==None:
+        plt.imshow(image)
+        imagebased=True
     
     masks=r['masks']
     classes=r['class_ids']
@@ -503,19 +527,28 @@ def viz_centroids(image,centroidlist,r,ShowCentroids=True,ShowRegions=True):
         for i in centroidlist: 
             n=centroidlist.index(i)
             plt.plot(i[0],i[1],'rx',markersize=5)
-            pylab.text(i[0]+30,i[1],n)
+            # pylab.text(i[0]+30,i[1],n) #commented out so that the index number is not shown!
     
     if ShowRegions:
         radii=[0.5,1,2.5]
         for radius in radii:
-            plt.gca().add_patch(plt.Circle((shipx,shipy), radius*ShipLength, color='black', fill=False))
+            circle=matplotlib.patches.Circle((shipx,shipy), radius*ShipLength, color='black', fill=False)
+            if imagebased:
+                plt.gca().add_patch(circle)
+            else: 
+                plt.add_patch(circle)
+                # plt.gca().add_patch(circle)
 
         addlines(plt,radius=2.5*ShipLength,equalangles=False,angleIncrement=[0,20,60,135,180],center=[shipx,shipy])
-        plt.xlim(0, image.shape[1]) ## if this isnt like this itll flip the image (mirror it) while it crops the image
-        plt.ylim(image.shape[0],0) ## if this isnt like this itll flip the image (mirror it) while it crops the image
         
-
-    plt.show()
+        if imagebased:
+            plt.xlim(0, image.shape[1]) ## if this isnt like this itll flip the image (mirror it) while it crops the image
+            plt.ylim(image.shape[0],0) ## if this isnt like this itll flip the image (mirror it) while it crops the image
+    
+    if showimg:
+        plt.show()
+    else: 
+        return plt
 
 if __name__ == "__main__": 
     config=loadconfig()
@@ -537,7 +570,7 @@ if __name__ == "__main__":
             r,image=troubleshootdetection(mdl) ## only use this for troubleshooting; remove later.
             regionStats,regiondefs =processDetections(r)
             if troubleshooting:#only activates if we are in troubleshooting mode (defined above)
-                viz_centroids(image,regionStats['Centroids'],r)
+                viz_centroids(regionStats['Centroids'],r,image=image)
             
             # Concert regionStats dict of dicts into ice concentration and ice size distribution data for each region;
             regionIceFinalStats=convertRegionStats(regionStats,regiondefs) #TODO: finsih this and merge it with the processDetections function.

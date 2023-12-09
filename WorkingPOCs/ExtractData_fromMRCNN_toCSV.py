@@ -190,6 +190,26 @@ def validateSize(videoDir, ForceDir):
     # TODO: with the corresponding files dictionary here we could definitely streamline the first stage of this function.....
     return [different,correspondingfiles]
 
+
+def init_regionStatsDict(RegionDefinition):
+    # pop out for reusability
+    regionStats={}
+    prevRadi=0
+    prevAngl=0
+    regionStats["Centroids"]=[] #empty list, eventually will be a list of lists, where each sub list is the x,y coords of a centroid. Purely for vis purposes later
+    for Radi in RegionDefinition["Radii"]:
+        for angl in RegionDefinition["AngleIncrements"]: 
+            regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}"]={}
+            if prevAngl != 0:
+                regionStats[f"Region_{prevRadi}:{Radi}_{-prevAngl}:{-angl}"]={}
+            else: 
+                regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{-angl}"]={}
+            prevAngl=angl
+        prevRadi=Radi
+        prevAngl=0
+    return regionStats
+
+
 def processDetections(r,CLASS_NAMES=['BG', 'Ice','Ship'],verbose=True): 
     # this function will process the results from the detected model (r) then will pass the new out to then be combined
     # and saved into the updated csv format to pass along to the training stage.
@@ -228,9 +248,8 @@ def processDetections(r,CLASS_NAMES=['BG', 'Ice','Ship'],verbose=True):
     
     # Eventually make this a method to consider the ship with the highest probability
     # within a certain expected region; "the" ship that we use from here out
-    if shipIndex.shape[0] != 1:
-        ## TODO: Implement the notes above, for now skip this entire frame.
-        print("\n\n we have identified more than one ship \n\n")
+    if shipIndex.shape[0] > 1:
+        print("\n\n we have identified MORE than one ship \n\n")
         currentBest=shipIndex[0]
         for i in shipIndex:
             #get prediction confidence and take highest one.
@@ -240,9 +259,14 @@ def processDetections(r,CLASS_NAMES=['BG', 'Ice','Ship'],verbose=True):
                 None
             ##this will set the 'ship' mask (where the polar coords are based) to the higher of the 
             ## two probabilities; but the second (or more) masks will be 
-        
-        
-        return  "something here" ## add somethign here that exits out of the frame
+    
+    elif shipIndex.shape[0] < 1:
+        ## we have detected zero ships in this frame, so skip the whole frame because we cant extract
+        # relative stats if we dont have the ship to extract relative to!
+        ShipLength=0
+        RegionDefinition={"Radii":[0.5*ShipLength,1*ShipLength,2.5*ShipLength],"AngleIncrements":[20,60,135,180]} #do NOT explicitly say 0 degrees.
+        regionStats = init_regionStatsDict(RegionDefinition)
+        return [regionStats,RegionDefinition]
     
     # Assuming we only have one ship detected now (not zero not > 1)
     # Get ship centroid & length
@@ -252,22 +276,23 @@ def processDetections(r,CLASS_NAMES=['BG', 'Ice','Ship'],verbose=True):
     
     # Define region bounds
     RegionDefinition={"Radii":[0.5*ShipLength,1*ShipLength,2.5*ShipLength],"AngleIncrements":[20,60,135,180]} #do NOT explicitly say 0 degrees.
+    regionStats=init_regionStatsDict(RegionDefinition)
     
     # Initialize dictionary of the regions; these will be filled in later with sub-dictionaries that have the "index-class" of the detection we found
-    regionStats={}
-    prevRadi=0
-    prevAngl=0
-    regionStats["Centroids"]=[] #empty list, eventually will be a list of lists, where each sub list is the x,y coords of a centroid. Purely for vis purposes later
-    for Radi in RegionDefinition["Radii"]:
-        for angl in RegionDefinition["AngleIncrements"]: 
-            regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}"]={}
-            if prevAngl != 0:
-                regionStats[f"Region_{prevRadi}:{Radi}_{-prevAngl}:{-angl}"]={}
-            else: 
-                regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{-angl}"]={}
-            prevAngl=angl
-        prevRadi=Radi
-        prevAngl=0
+    # regionStats={}
+    # prevRadi=0
+    # prevAngl=0
+    # regionStats["Centroids"]=[] #empty list, eventually will be a list of lists, where each sub list is the x,y coords of a centroid. Purely for vis purposes later
+    # for Radi in RegionDefinition["Radii"]:
+    #     for angl in RegionDefinition["AngleIncrements"]: 
+    #         regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}"]={}
+    #         if prevAngl != 0:
+    #             regionStats[f"Region_{prevRadi}:{Radi}_{-prevAngl}:{-angl}"]={}
+    #         else: 
+    #             regionStats[f"Region_{prevRadi}:{Radi}_{prevAngl}:{-angl}"]={}
+    #         prevAngl=angl
+    #     prevRadi=Radi
+    #     prevAngl=0
     
     # Iterate over every prediction detection
     for N0 in range(0,classes.shape[0]): 

@@ -5,6 +5,7 @@ import os
 ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT_DIR)
 
+import WorkingPOCs.ExtractData_fromMRCNN_toCSV as ED
 import mrcnn
 import mrcnn.config
 import mrcnn.model
@@ -31,7 +32,7 @@ videoFILEpath=os.path.join(ROOT_DIR,'IceData','SplashVideos','50m_9ths_1p2kts_0p
 class SimpleConfig(mrcnn.config.Config):
     # Give the configuration a recognizable name
     NAME = "Interference_video"
-    IMAGES_PER_GPU = 1 #1 for dev 3 for implementation.
+    IMAGES_PER_GPU = 1 
     
 	# Number of classes = number of classes + 1 (+1 for the background). The background class is named BG
     NUM_CLASSES = len(CLASS_NAMES)
@@ -78,7 +79,7 @@ def DetectAndMask(frame,r,shape,ShowCentroids=True,ShowRegions=True):
     ax.axis('off')
     
     if ShowCentroids or ShowRegions: 
-        import WorkingPOCs.ExtractData_fromMRCNN_toCSV as ED
+        
         regionstats,_=ED.processDetections(r,CLASS_NAMES=CLASS_NAMES,verbose=False)
         ax=ED.viz_centroids(regionstats['Centroids'],r,plt=ax,CLASS_NAMES=CLASS_NAMES,ShowCentroids=ShowCentroids,ShowRegions=ShowRegions,showimg=False)
     

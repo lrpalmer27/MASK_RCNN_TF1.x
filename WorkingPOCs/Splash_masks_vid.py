@@ -78,8 +78,7 @@ def DetectAndMask(frame,r,shape,ShowCentroids=True,ShowRegions=True):
     # print(type(_))
     ax.axis('off')
     
-    if ShowCentroids or ShowRegions: 
-        
+    if ShowCentroids or ShowRegions:      
         regionstats,_=ED.processDetections(r,CLASS_NAMES=CLASS_NAMES,verbose=False)
         ax=ED.viz_centroids(regionstats['Centroids'],r,plt=ax,CLASS_NAMES=CLASS_NAMES,ShowCentroids=ShowCentroids,ShowRegions=ShowRegions,showimg=False)
     

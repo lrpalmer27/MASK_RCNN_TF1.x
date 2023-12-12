@@ -13,8 +13,8 @@ import tensorflow as tf
 
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 restarting = False #Change this to True if you want to grab the saved weights in the .logs dir and keep training.
-dataset_path=os.path.join(ROOT_DIR,'IceData','NRC_data_multi_stage_big')
-model_path = os.path.join(ROOT_DIR,'mrcnntf114_big_weights.h5') #path where you want model saved
+dataset_path=os.path.join(ROOT_DIR,'IceData','NRC_SMALL_ICE')
+model_path = os.path.join(ROOT_DIR,'smol.h5') #path where you want model saved
 
 # Import Mask RCNN
 sys.path.append(ROOT_DIR)  # To find local version of the library
@@ -35,7 +35,7 @@ class IceConfig(Config):
     Derives from the base Config class and overrides some values.
     """
     # Give the configuration a recognizable name
-    NAME = 'playtest'
+    NAME = 'smolTest'
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
@@ -217,7 +217,7 @@ if __name__ == '__main__':
         weights_path = model.find_last() #uncomment if need to re-start after pausing training.
         model.load_weights(weights_path, by_name=True)
     else: 
-        weights_path = os.path.join(ROOT_DIR,"mask_rcnn_coco.h5")
+        weights_path = COCO_WEIGHTS_PATH
         model.load_weights(weights_path, by_name=True, exclude=["mrcnn_class_logits", "mrcnn_bbox_fc","mrcnn_bbox", "mrcnn_mask"])
 
     train(model,dataset_path)  

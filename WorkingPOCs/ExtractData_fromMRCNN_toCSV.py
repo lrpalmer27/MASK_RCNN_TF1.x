@@ -506,7 +506,7 @@ def convertRegionStats (regionStats,RegionDefinition):
  
 def troubleshootdetection(model):
     #this is hard coding the image that we want to use for devel. purposes.
-    image = cv2.imread(r"C:\Users\logan\Desktop\MEng\Mask_RCNN\IceData\test_imgs\100m_dist_9ths_1p2kts_0p4m_0deg_001_c_overhead_frame361.png") #picks a random image in the kangaroo test image dir.
+    image = cv2.imread(r"C:\Users\logan\Desktop\MEng\Mask_RCNN\temp.png") #picks a 'random' image in the kangaroo test image dir.
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     r = model.detect([image], verbose=0)
     r = r[0]
@@ -536,9 +536,11 @@ def addlines(plt,radius,angleIncrement,center,equalangles=True):
         plt.plot([center[0],center[0]-radius*math.cos(angle)],[center[1],center[1]+radius*math.sin(angle)])
 
 
-def viz_centroids(centroidlist,r,plt=None,CLASS_NAMES=['BG', 'Ice','Ship'],image=None,ShowCentroids=True,ShowRegions=True,showimg=True):
+def viz_centroids(centroidlist,r,plt=None,CLASS_NAMES=['BG', 'Ice','Ship'],image='None',ShowCentroids=True,ShowRegions=True,showimg=True):
     imagebased=False
-    if not image==None:
+    if image!='None':
+        # this is here because we can input a plt (pyplot) object from another script (splash vid script)
+        # and this function will return the centroid viz items ontop of that pyplot object
         plt.imshow(image)
         imagebased=True
     

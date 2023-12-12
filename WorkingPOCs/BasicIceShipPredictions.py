@@ -22,7 +22,7 @@ ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLASS_NAMES = ['BG', 'Ice','Ship']
 TestDir=os.path.join(ROOT_DIR,'IceData','test_imgs')
 # TrainedWeights=os.path.join(ROOT_DIR,'logs','super_dec04_lowsteps','mask_rcnn_maindec05_lowsteps_0050.h5')
-TrainedWeights=os.path.join(ROOT_DIR,'logs','supercompDec08','mask_rcnn_dec08_moreimgs_0100.h5')
+TrainedWeights=os.path.join(ROOT_DIR,'logs','superC_dec11_smallIce','mask_rcnn_dec11_smallicetrainingonly_0073.h5')
 
 
 def visualize (image,r,save=False):
@@ -67,7 +67,7 @@ model.load_weights(filepath=TrainedWeights,
 Test_Dir_list=os.listdir(TestDir) #lists the kangaroo test image dir
 randomImg=Test_Dir_list[random.randint(0,len(Test_Dir_list)-1)]
 randimgpath=os.path.join(TestDir,randomImg)
-randimgpath=r"C:\Users\logan\Desktop\MEng\Mask_RCNN\IceData\test_imgs\100m_dist_9ths_1p2kts_0p4m_0deg_001_c_overhead_frame361.png"
+randimgpath=r"C:\Users\logan\Desktop\MEng\Mask_RCNN\IceData\test_imgs\25m_9ths_0p5kts_1m_0deg_001_c_overhead_frame476.png"
 image = cv2.imread(randimgpath) #picks a random image in the kangaroo test image dir.
 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 

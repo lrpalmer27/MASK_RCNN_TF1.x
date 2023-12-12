@@ -34,7 +34,7 @@ if __name__ == "__main__":
     _rawvidData=ROOT_DIR+"\\.rawVideoData"
     _processedData=ROOT_DIR+'\\'+'.processedData'
     regex="\d{2,3}p?\d?m_\dths_\d+p\d+kts_\d?p?\dm_\ddeg_\d{3}"
-    troubleshooting=True
+    troubleshooting=False
     ### end important paths  
 
     class loadconfig(Config):
@@ -136,7 +136,7 @@ def GetCSVData(pth):
     csvpath=_rawforceData+"\\"+pth
     try: 
         df=pd.read_csv(csvpath)
-        t=df[:1].values.tolist()[0]
+        # t=df[:1].values.tolist()[0] #this doesnt even go anywhere
         
     except: 
         print("Could not open:",pth,"\nFull path:",csvpath)
@@ -404,7 +404,7 @@ def getShipDrxn(mask,centroid,radius):
     return [p0,p1,ptend]
 
 
-def save_newCSV(OriginalData, processedData,filename):
+def save_newCSV(OriginalData, processedData,filename,frameNumber):
     # this is done on a per frame basis
     filepath=_processedData+'\\'+filename+'.csv'
     
@@ -425,17 +425,20 @@ def save_newCSV(OriginalData, processedData,filename):
     together=dict(zip(ListofHeading_keys,ListofAllData))
     
     # Check if the csv file exists yet?
-    if not os.path.exists(filepath): #if it doesnt exist yet then put in the basics
+    if not os.path.exists(filepath) and frameNumber==0: #if it doesnt exist yet then put in the basics
         for i in list(together.keys()):
             temp=together[i]
             together[i]=[0,temp]
         df=pd.DataFrame(together)
+        # print(df)
     else: 
-        df=pd.read_csv(filepath) 
+        df=pd.read_csv(filepath)
+        df=df.drop('Unnamed: 0',1)
     
         # Now we can add the original data, and new data; frame by frame (this fcn gets called each frame)
         # new=df.append(together)
         df.loc[len(df)] = together
+        # print(df)
     
     # print(df)    
     df.to_csv(filepath) #saves the new file each round incase there is an error we dont want it to be living in memory forever.
@@ -492,10 +495,10 @@ def convertRegionStats (regionStats,RegionDefinition):
                 regionIceFinalStats["StandardDeviation"].append(StdDev)
                 regionIceFinalStats["Mean"].append(Mean)
             else: 
-                print("nolength")
+                print("No ice in this region -- make everything zeros!")
                 regionIceFinalStats["RegionNames"].append(f"Region_{prevRadi}:{Radi}_{prevAngl}:{angl}")
                 regionIceFinalStats["IceConcentratons_pct"].append(0)
-                ["StandardDeviation"].append(0)
+                regionIceFinalStats["StandardDeviation"].append(0)
                 regionIceFinalStats["Mean"].append(0)
                 
             prevAngl=angl
@@ -506,7 +509,8 @@ def convertRegionStats (regionStats,RegionDefinition):
  
 def troubleshootdetection(model):
     #this is hard coding the image that we want to use for devel. purposes.
-    image = cv2.imread(r"C:\Users\logan\Desktop\MEng\Mask_RCNN\temp.png") #picks a 'random' image in the kangaroo test image dir.
+    # image = cv2.imread(r"C:\Users\logan\Desktop\MEng\Mask_RCNN\temp.png")
+    image = cv2.imread(r"C:\Users\logan\Desktop\MEng\Mask_RCNN\temp_wship.png") #picks a 'random' image in the kangaroo test image dir.
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     r = model.detect([image], verbose=0)
     r = r[0]
@@ -536,14 +540,9 @@ def addlines(plt,radius,angleIncrement,center,equalangles=True):
         plt.plot([center[0],center[0]-radius*math.cos(angle)],[center[1],center[1]+radius*math.sin(angle)])
 
 
-def viz_centroids(centroidlist,r,plt=None,CLASS_NAMES=['BG', 'Ice','Ship'],image='None',ShowCentroids=True,ShowRegions=True,showimg=True):
+def viz_centroids(centroidlist,r,plt,CLASS_NAMES=['BG', 'Ice','Ship'],ShowCentroids=True,ShowRegions=True,showimg=True):
+    #  this function errors out when there no ship detected!!!!
     imagebased=False
-    if image!='None':
-        # this is here because we can input a plt (pyplot) object from another script (splash vid script)
-        # and this function will return the centroid viz items ontop of that pyplot object
-        plt.imshow(image)
-        imagebased=True
-    
     masks=r['masks']
     classes=r['class_ids']
     
@@ -554,7 +553,7 @@ def viz_centroids(centroidlist,r,plt=None,CLASS_NAMES=['BG', 'Ice','Ship'],image
         for i in centroidlist: 
             n=centroidlist.index(i)
             plt.plot(i[0],i[1],'rx',markersize=5)
-            # pylab.text(i[0]+30,i[1],n) #commented out so that the index number is not shown!
+            pylab.text(i[0]+30,i[1],n) #commented out so that the index number is not shown!
     
     if ShowRegions:
         radii=[0.5,1,2.5]
@@ -597,17 +596,18 @@ if __name__ == "__main__":
             r,image=troubleshootdetection(mdl) ## only use this for troubleshooting; remove later.
             regionStats,regiondefs =processDetections(r)
             if troubleshooting:#only activates if we are in troubleshooting mode (defined above)
-                viz_centroids(regionStats['Centroids'],r,image=image)
+                plt.imshow(image)
+                viz_centroids(regionStats['Centroids'],r,plt)
             
             # Concert regionStats dict of dicts into ice concentration and ice size distribution data for each region;
             regionIceFinalStats=convertRegionStats(regionStats,regiondefs) #TODO: finsih this and merge it with the processDetections function.
             
             # From Shameem: the speed recorded in these preliminary datafiles are the carriage speed; while the vessel is under DP control.
-            # We need to consider the thrust --> speed conversion here to get the actual vessel speed.
-            ProcessedOriginalData=PostProcess_OriginalData(OriginalData[:frameN+1].values.tolist()[0])
+            # TODO: We need to consider the thrust --> speed conversion here to get the actual vessel speed.
+            ProcessedOriginalData=PostProcess_OriginalData(OriginalData.values.tolist()[frameN])
 
             #save a csv file for every frame - overwriting the previous so we can pickup where we left off.
-            save_newCSV(ProcessedOriginalData,regionIceFinalStats,baseFilename) #not allowed to grab the column names as the first row; needs to be row 1
+            save_newCSV(ProcessedOriginalData,regionIceFinalStats,baseFilename,frameN) #not allowed to grab the column names as the first row; needs to be row 1
         
 
     

@@ -12,8 +12,8 @@ def important_paths():
     global savedir
     
     ROOT_DIR = os.path.dirname(__file__)
-    videos_dir=os.path.join(ROOT_DIR,"NRC_dataset\\videos\\")
-    savedir=os.path.join(ROOT_DIR,"NRC_dataset\\frames\\")
+    videos_dir=os.path.join(ROOT_DIR,"raw_NRC\\bigIceVids\\")
+    savedir=os.path.join(ROOT_DIR,"raw_NRC\\bigIceFrames\\")
 
 # Function to extract frames 
 def FrameCapture(video_dir,vid_name,save_dir, frame): 
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     for vid in videos:
         vids_frames[f"{vid}"]=NumFrames(videos_dir+vid)
     
-    num_train_images=500
+    num_train_images=50
     
     randomTrainVids=[random.choice(videos) for _ in range(0,num_train_images)]
 

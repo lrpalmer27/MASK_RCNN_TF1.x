@@ -509,8 +509,8 @@ def convertRegionStats (regionStats,RegionDefinition):
  
 def troubleshootdetection(model):
     #this is hard coding the image that we want to use for devel. purposes.
-    # image = cv2.imread(r"C:\Users\logan\Desktop\MEng\Mask_RCNN\temp.png")
-    image = cv2.imread(r"C:\Users\logan\Desktop\MEng\Mask_RCNN\temp_wship.png") #picks a 'random' image in the kangaroo test image dir.
+    image = cv2.imread(r"C:\Users\logan\Desktop\MEng\Mask_RCNN\temp.png")
+    # image = cv2.imread(r"C:\Users\logan\Desktop\MEng\Mask_RCNN\temp_wship.png") #picks a 'random' image in the kangaroo test image dir.
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     r = model.detect([image], verbose=0)
     r = r[0]

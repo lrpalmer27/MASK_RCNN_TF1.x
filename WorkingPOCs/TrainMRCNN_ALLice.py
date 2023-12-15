@@ -10,11 +10,14 @@ import json
 import numpy as np
 import skimage.draw
 import tensorflow as tf
+import imgaug
+import imgaug.augmenters as imgaa
 
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 restarting = False #Change this to True if you want to grab the saved weights in the .logs dir and keep training.
-dataset_path=os.path.join(ROOT_DIR,'IceData','NRC_SMALL_ICE')
-model_path = os.path.join(ROOT_DIR,'smol.h5') #path where you want model saved
+dataset_path=os.path.join(ROOT_DIR,'IceData','NRC_data_all')
+model_path = os.path.join(ROOT_DIR,'WholeModel_w_augmentation.h5') #path where you want model saved
+verbose=True
 
 # Import Mask RCNN
 sys.path.append(ROOT_DIR)  # To find local version of the library
@@ -25,7 +28,6 @@ from mrcnn import model as modellib, utils
 COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5") #path to coco weights
 DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR,'logs') #path to directory to store logs:
 
-
 ############################################################
 #  Configurations
 ############################################################
@@ -35,23 +37,29 @@ class IceConfig(Config):
     Derives from the base Config class and overrides some values.
     """
     # Give the configuration a recognizable name
-    NAME = 'smolTest'
+    NAME = 'WholeModel_w_augmentation_dec15'
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
-    IMAGES_PER_GPU = 1
+    IMAGES_PER_GPU = 4
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 1 + 1 # Background + Ice + Ship
 
     # Number of training steps per epoch
-    STEPS_PER_EPOCH = 75 #100
+    STEPS_PER_EPOCH = 125 #100
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
     
     #since our images are huge
+    # IMAGE_MAX_DIM=6016
+    # IMAGE_MIN_DIM=1024
     IMAGE_MAX_DIM=1024
+    
+    TRAIN_ROIS_PER_IMAGE = 1000
+    
+    DETECTION_MAX_INSTANCES = 700
 
 ############################################################
 #  Dataset
@@ -202,16 +210,28 @@ def train(model,dataset_path):
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
                 epochs=400,
+                augmentation=imgaa.Sometimes(0.5,imgaa.OneOf([imgaa.Fliplr(1),
+                                                              imgaa.Flipud(1),
+                                                              imgaa.Affine(rotate=(-45,45)),
+                                                              imgaa.Affine(scale=(0.5,1.5)),
+                                                              imgaa.GaussianBlur(sigma=(0,5)),
+                                                              imgaa.iaa_convolutional.EdgeDetect(alpha=(0.25,0.75)) # does some kind of edge detection in B&W then alpha blend with real img
+                                                              ])),
                 layers='heads')
+    # ADDING AUGMENTERS HERE WORKS THE SAME AS USING THE DATAGENERATOR
+    # THE TRAIN FUNCTION CALLS THE DATA GENERATOR OBJECT USING THESE AUGMENTERS.
+    
+    #imgaug augmenters has a weather class to artificially add snowflakes and clouds and such!
 
 if __name__ == '__main__':
     config = IceConfig()
     config.display()
     model = modellib.MaskRCNN(mode="training", config=config,model_dir=DEFAULT_LOGS_DIR)
     
-    print("\n\n", tf.config.experimental.list_physical_devices())
-    print(tf.test.is_gpu_available())
-    print(tf.test.gpu_device_name(),"\n\n")
+    if verbose:
+        print("\n\n", tf.config.experimental.list_physical_devices())
+        print(tf.test.is_gpu_available())
+        print(tf.test.gpu_device_name(),"\n\n")
     
     if restarting: 
         weights_path = model.find_last() #uncomment if need to re-start after pausing training.
@@ -221,5 +241,5 @@ if __name__ == '__main__':
         model.load_weights(weights_path, by_name=True, exclude=["mrcnn_class_logits", "mrcnn_bbox_fc","mrcnn_bbox", "mrcnn_mask"])
 
     train(model,dataset_path)  
-    model.keras_model.save_weights(model_path) #saves the final weights in the main working folder.
+    model.keras_model.save_weights(model_path) #saves the final weights in the main working folder. Not really necissary since we have the logs folder saving each iteration.
    

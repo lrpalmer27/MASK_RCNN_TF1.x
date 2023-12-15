@@ -10,13 +10,11 @@ import json
 import numpy as np
 import skimage.draw
 import tensorflow as tf
-import imgaug
-import imgaug.augmenters as imgaa
 
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 restarting = False #Change this to True if you want to grab the saved weights in the .logs dir and keep training.
-dataset_path=os.path.join(ROOT_DIR,'IceData','NRC_data_all')
-model_path = os.path.join(ROOT_DIR,'WholeModel_w_augmentation.h5') #path where you want model saved
+dataset_path=os.path.join(ROOT_DIR,'IceData','NRC_data_all') #path to data
+model_path = os.path.join(ROOT_DIR,'WholeModel_w_augmentation') #path where you want model saved
 verbose=True
 
 # Import Mask RCNN
@@ -57,9 +55,9 @@ class IceConfig(Config):
     # IMAGE_MIN_DIM=1024
     IMAGE_MAX_DIM=1024
     
-    TRAIN_ROIS_PER_IMAGE = 1000
+    # TRAIN_ROIS_PER_IMAGE = 1000
     
-    DETECTION_MAX_INSTANCES = 700
+    # DETECTION_MAX_INSTANCES = 700
 
 ############################################################
 #  Dataset
@@ -207,16 +205,26 @@ def train(model,dataset_path):
     # COCO trained weights, we don't need to train too long. Also,
     # no need to train all layers, just the heads should do it.
     print("Training network heads")
-    model.train(dataset_train, dataset_val,
-                learning_rate=config.LEARNING_RATE,
-                epochs=400,
-                augmentation=imgaa.Sometimes(0.5,imgaa.OneOf([imgaa.Fliplr(1),
-                                                              imgaa.Affine(rotate=(-45,45)),
-                                                              imgaa.Affine(scale=(0.5,1.5)),
-                                                              imgaa.iaa_convolutional.EdgeDetect(alpha=(0.25,0.75)),
-                                                              imgaa.Flipud(1)
-                                                              ])),
-                layers='heads')
+    logansComputer=True
+    if logansComputer:
+        model.train(dataset_train, dataset_val,
+                    learning_rate=config.LEARNING_RATE,
+                    epochs=400,
+                    layers='heads')
+    else:
+        # import imgaug
+        import imgaug.augmenters as imgaa
+        #this is for the supercomputer only - my gpu cant handle this.
+        model.train(dataset_train, dataset_val,
+                    learning_rate=config.LEARNING_RATE,
+                    epochs=400,
+                    layers='heads',
+                    augmentation=imgaa.Sometimes(0.5,imgaa.OneOf([imgaa.Fliplr(1),
+                                                                imgaa.Affine(rotate=(-45,45)),
+                                                                imgaa.Affine(scale=(0.5,1.5)),
+                                                                imgaa.iaa_convolutional.EdgeDetect(alpha=(0.25,0.75)),
+                                                                imgaa.Flipud(1)]),
+                                                    None))
     # Note: 4gb GPU cannot handle this augmentation.....fyi
     
     # ADDING AUGMENTERS HERE WORKS THE SAME AS USING THE DATAGENERATOR

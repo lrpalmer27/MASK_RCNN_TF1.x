@@ -78,7 +78,7 @@ if automatic:
     
     testDir=os.path.join(ROOT_DIR,'IceData','test_imgs')
     testImgs=os.listdir(testDir)
-    saveDir=os.path.join(ROOT_DIR,'.tempImgsSave')
+    saveDir=os.path.join(ROOT_DIR,'currentStatusImgs')
 
     for dire in list(makepics.keys()): 
         TrainedWeights=os.path.join(ROOT_DIR,'logs',f'{dire}',makepics[dire])

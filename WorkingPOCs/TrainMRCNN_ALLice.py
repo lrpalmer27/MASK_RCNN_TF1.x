@@ -41,7 +41,7 @@ class IceConfig(Config):
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
-    IMAGES_PER_GPU = 4
+    IMAGES_PER_GPU = 1
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 1 + 1 # Background + Ice + Ship
@@ -211,13 +211,14 @@ def train(model,dataset_path):
                 learning_rate=config.LEARNING_RATE,
                 epochs=400,
                 augmentation=imgaa.Sometimes(0.5,imgaa.OneOf([imgaa.Fliplr(1),
-                                                              imgaa.Flipud(1),
                                                               imgaa.Affine(rotate=(-45,45)),
                                                               imgaa.Affine(scale=(0.5,1.5)),
-                                                              imgaa.GaussianBlur(sigma=(0,5)),
-                                                              imgaa.iaa_convolutional.EdgeDetect(alpha=(0.25,0.75)) # does some kind of edge detection in B&W then alpha blend with real img
+                                                              imgaa.iaa_convolutional.EdgeDetect(alpha=(0.25,0.75)),
+                                                              imgaa.Flipud(1)
                                                               ])),
                 layers='heads')
+    # Note: 4gb GPU cannot handle this augmentation.....fyi
+    
     # ADDING AUGMENTERS HERE WORKS THE SAME AS USING THE DATAGENERATOR
     # THE TRAIN FUNCTION CALLS THE DATA GENERATOR OBJECT USING THESE AUGMENTERS.
     

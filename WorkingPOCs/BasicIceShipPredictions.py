@@ -22,8 +22,9 @@ from skimage.io import imsave
 ROOT_DIR=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLASS_NAMES = ['BG', 'Ice','Ship']
 TestDir=os.path.join(ROOT_DIR,'IceData','test_imgs')
-# TrainedWeights=os.path.join(ROOT_DIR,'logs','super_dec04_lowsteps','mask_rcnn_maindec05_lowsteps_0050.h5')
-TrainedWeights=os.path.join(ROOT_DIR,'logs','superC_dec11_smallIce','mask_rcnn_dec11_smallicetrainingonly_0073.h5')
+TrainedWeights=os.path.join(ROOT_DIR,'logs','supercompDec08','mask_rcnn_dec08_moreimgs_0100.h5')
+# TrainedWeights=os.path.join(ROOT_DIR,'logs',"dec12_nrc_25mice","mask_rcnn_dec12_nrc_25mice_0020.h5")
+# TrainedWeights=os.path.join(ROOT_DIR,'logs',"dec12_nrc_12_5mice","mask_rcnn_dec12_nrc_12_5mice_0009.h5")
 
 
 def visualize (image,r,save=False,path=None):
@@ -60,12 +61,17 @@ class SimpleConfig(mrcnn.config.Config):
     GPU_COUNT = 1
     IMAGES_PER_GPU = 1
     
-    DETECTION_MAX_INSTANCES = 700
+    DETECTION_MAX_INSTANCES = 1200
+    
+    # IMAGE_MAX_DIM=1024
+    # IMAGE_MIN_DIM=1024
+    
+    DETECTION_MIN_CONFIDENCE = 0.5 #lowering this lets us see more low prob detections -- usually OK
 
 	# Number of classes = number of classes + 1 (+1 for the background). The background class is named BG
     NUM_CLASSES = len(CLASS_NAMES)
 
-automatic=True
+automatic=False
 if automatic:
     makepics={'dec12_nrc_12_5mice':'mask_rcnn_dec12_nrc_12_5mice_0009.h5',
             'dec12_nrc_25mice':'mask_rcnn_dec12_nrc_25mice_0020.h5',
@@ -94,8 +100,7 @@ if automatic:
             
             visualize(image,r,save=True,path=os.path.join(saveDir,f'{dire}_{img}'))
 
-manual=False
-if manual:
+else:
     # Initialize the Mask R-CNN model for inference and then load the weights.
     # This step builds the Keras model architecture.
     model = mrcnn.model.MaskRCNN(mode="inference", 
@@ -107,11 +112,8 @@ if manual:
                     by_name=True)
 
     # load the input image, convert it from BGR to RGB channel
-    Test_Dir_list=os.listdir(TestDir) #lists the kangaroo test image dir
-    randomImg=Test_Dir_list[random.randint(0,len(Test_Dir_list)-1)]
-    randimgpath=os.path.join(TestDir,randomImg)
-    randimgpath=r"C:\Users\logan\Desktop\MEng\Mask_RCNN\IceData\test_imgs\25m_9ths_0p5kts_1m_0deg_001_c_overhead_frame476.png"
-    image = cv2.imread(randimgpath) #picks a random image in the kangaroo test image dir.
+    imgpath=r"C:\Users\logan\Desktop\MEng\Mask_RCNN\IceData\test_imgs\25m_9ths_0p5kts_1m_0deg_001_c_overhead_frame476.png"
+    image = cv2.imread(imgpath) #picks a random image in the kangaroo test image dir.
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     # Perform a forward pass of the network to obtain the results
@@ -121,6 +123,6 @@ if manual:
     r = r[0]
 
     # Visualize the detected objects.
-    print('\n\nChosen random file to display with mask predictions: ',randomImg)
+    print('\n\nChosen random file to display with mask predictions: ',imgpath)
 
-    visualize (image,r,save=False) #save fcn doesnt work yet
+    visualize (image,r) #save fcn doesnt work yet

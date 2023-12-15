@@ -205,27 +205,19 @@ def train(model,dataset_path):
     # COCO trained weights, we don't need to train too long. Also,
     # no need to train all layers, just the heads should do it.
     print("Training network heads")
-    logansComputer=True
-    if logansComputer:
-        model.train(dataset_train, dataset_val,
-                    learning_rate=config.LEARNING_RATE,
-                    epochs=400,
-                    layers='heads')
-    else:
-        # import imgaug
-        import imgaug.augmenters as imgaa
-        #this is for the supercomputer only - my gpu cant handle this.
-        model.train(dataset_train, dataset_val,
-                    learning_rate=config.LEARNING_RATE,
-                    epochs=400,
-                    layers='heads',
-                    augmentation=imgaa.Sometimes(0.5,imgaa.OneOf([imgaa.Fliplr(1),
-                                                                imgaa.Affine(rotate=(-45,45)),
-                                                                imgaa.Affine(scale=(0.5,1.5)),
-                                                                imgaa.iaa_convolutional.EdgeDetect(alpha=(0.25,0.75)),
-                                                                imgaa.Flipud(1)]),
-                                                    None))
-    # Note: 4gb GPU cannot handle this augmentation.....fyi
+
+    # import imgaug
+    import imgaug.augmenters as imgaa
+    #this is for the supercomputer only - my gpu cant handle this.
+    model.train(dataset_train, dataset_val,
+                learning_rate=config.LEARNING_RATE,
+                epochs=400,
+                layers='heads',
+                augmentation=imgaa.Sometimes(0.5,imgaa.OneOf([imgaa.Fliplr(1),
+                                                            imgaa.Affine(rotate=(-45,45)),
+                                                            imgaa.iaa_convolutional.EdgeDetect(alpha=(0.25,0.75)),
+                                                            imgaa.Flipud(1)]),
+                                                None))
     
     # ADDING AUGMENTERS HERE WORKS THE SAME AS USING THE DATAGENERATOR
     # THE TRAIN FUNCTION CALLS THE DATA GENERATOR OBJECT USING THESE AUGMENTERS.

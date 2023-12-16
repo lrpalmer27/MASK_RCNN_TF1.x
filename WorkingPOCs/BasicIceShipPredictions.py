@@ -66,17 +66,19 @@ class SimpleConfig(mrcnn.config.Config):
     # IMAGE_MAX_DIM=1024
     # IMAGE_MIN_DIM=1024
     
-    DETECTION_MIN_CONFIDENCE = 0.5 #lowering this lets us see more low prob detections -- usually OK
+    DETECTION_MIN_CONFIDENCE = 0.3 #lowering this lets us see more low prob detections -- usually OK
 
 	# Number of classes = number of classes + 1 (+1 for the background). The background class is named BG
     NUM_CLASSES = len(CLASS_NAMES)
 
-automatic=False
+automatic=True
 if automatic:
-    makepics={'dec12_nrc_12_5mice':'mask_rcnn_dec12_nrc_12_5mice_0009.h5',
-            'dec12_nrc_25mice':'mask_rcnn_dec12_nrc_25mice_0020.h5',
-            'dec12_nrc_50mice':'mask_rcnn_dec12_nrc_50mice_0085.h5',
-            "dec12_nrc_100mice":'mask_rcnn_dec12_nrc_100mice_0026.h5'}
+    # makepics={'dec12_nrc_12_5mice':'mask_rcnn_dec12_nrc_12_5mice_0009.h5',
+    #         'dec12_nrc_25mice':'mask_rcnn_dec12_nrc_25mice_0020.h5',
+    #         'dec12_nrc_50mice':'mask_rcnn_dec12_nrc_50mice_0085.h5',
+    #         "dec12_nrc_100mice":'mask_rcnn_dec12_nrc_100mice_0026.h5'}
+
+    makepics={'wholemodel_w_augmentation_dec15':'mask_rcnn_wholemodel_w_augmentation_dec15_0391.h5'}
 
     model = mrcnn.model.MaskRCNN(mode="inference", 
                                 config=SimpleConfig(),

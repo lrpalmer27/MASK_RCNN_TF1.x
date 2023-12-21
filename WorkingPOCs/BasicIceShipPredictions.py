@@ -25,6 +25,7 @@ TestDir=os.path.join(ROOT_DIR,'IceData','test_imgs')
 TrainedWeights=os.path.join(ROOT_DIR,'logs','supercompDec08','mask_rcnn_dec08_moreimgs_0100.h5')
 # TrainedWeights=os.path.join(ROOT_DIR,'logs',"dec12_nrc_25mice","mask_rcnn_dec12_nrc_25mice_0020.h5")
 # TrainedWeights=os.path.join(ROOT_DIR,'logs',"dec12_nrc_12_5mice","mask_rcnn_dec12_nrc_12_5mice_0009.h5")
+TrainedWeights=os.path.join(ROOT_DIR,'logs','wholemodel_w_augmentation_dec15',"mask_rcnn_wholemodel_w_augmentation_dec15_0391.h5")
 
 
 def visualize (image,r,save=False,path=None):
@@ -61,10 +62,12 @@ class SimpleConfig(mrcnn.config.Config):
     GPU_COUNT = 1
     IMAGES_PER_GPU = 1
     
-    DETECTION_MAX_INSTANCES = 1200
+    DETECTION_MAX_INSTANCES = 800
     
     # IMAGE_MAX_DIM=1024
     # IMAGE_MIN_DIM=1024
+    
+    DETECTION_NMS_THRESHOLD = 0.1
     
     DETECTION_MIN_CONFIDENCE = 0.3 #lowering this lets us see more low prob detections -- usually OK
 
@@ -78,7 +81,7 @@ if automatic:
     #         'dec12_nrc_50mice':'mask_rcnn_dec12_nrc_50mice_0085.h5',
     #         "dec12_nrc_100mice":'mask_rcnn_dec12_nrc_100mice_0026.h5'}
 
-    makepics={'wholemodel_w_augmentation_dec15':'mask_rcnn_wholemodel_w_augmentation_dec15_0391.h5'}
+    makepics={'megamodel_prt1':'mask_rcnn_augmentedmegamodel_0140.h5'}
 
     model = mrcnn.model.MaskRCNN(mode="inference", 
                                 config=SimpleConfig(),
@@ -114,7 +117,7 @@ else:
                     by_name=True)
 
     # load the input image, convert it from BGR to RGB channel
-    imgpath=r"C:\Users\logan\Desktop\MEng\Mask_RCNN\IceData\test_imgs\25m_9ths_0p5kts_1m_0deg_001_c_overhead_frame476.png"
+    imgpath=r"C:\Users\logan\Desktop\MEng\Mask_RCNN\IceData\test_imgs\12p5m_9ths_0p5kts_0p6m_0deg_001_c_overhead_frame346.png"
     image = cv2.imread(imgpath) #picks a random image in the kangaroo test image dir.
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 

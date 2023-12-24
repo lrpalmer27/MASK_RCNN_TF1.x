@@ -14,7 +14,7 @@ import tensorflow as tf
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 restarting = False #Change this to True if you want to grab the saved weights in the .logs dir and keep training.
 dataset_path=os.path.join(ROOT_DIR,'IceData','NRC_data_all') #path to data
-model_path = os.path.join(ROOT_DIR,'WholeModel_w_augmentation') #path where you want model saved
+model_path = os.path.join(ROOT_DIR,'MultiLayerDec23') #path where you want model saved
 verbose=True
 
 # Import Mask RCNN
@@ -35,7 +35,7 @@ class IceConfig(Config):
     Derives from the base Config class and overrides some values.
     """
     # Give the configuration a recognizable name
-    NAME = 'WholeModel_w_augmentation_dec15'
+    NAME = 'Dec23MultiLayerMega'
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
@@ -48,7 +48,7 @@ class IceConfig(Config):
     STEPS_PER_EPOCH = 2000 
 
     # Skip detections with < 90% confidence
-    DETECTION_MIN_CONFIDENCE = 0.9
+    DETECTION_MIN_CONFIDENCE = 0.5
     
     #since our images are huge
     # IMAGE_MAX_DIM=6016
@@ -65,7 +65,8 @@ class IceConfig(Config):
     USE_MINI_MASK = True
     MINI_MASK_SHAPE = (56, 56)
     
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9])
+    MEAN_PIXEL = np.array([102.19411376, 154.99060038, 129.73111352])
+    
     # DETECTION_MAX_INSTANCES = 700
 
 ############################################################
@@ -214,29 +215,21 @@ def train(model,dataset_path):
     # COCO trained weights, we don't need to train too long. Also,
     # no need to train all layers, just the heads should do it.
     print("Training network heads")
-    logansComputer=False
-    if logansComputer:
-        model.train(dataset_train, dataset_val,
-                    learning_rate=config.LEARNING_RATE,
-                    epochs=400,
-                    layers='heads')
-        
-    else:
-        #import imgaug
-        import imgaug.augmenters as imgaa
-        #this is for the supercomputer only - my gpu cant handle this.
-        print("logan test -- indicates we are using super comp training side")
-        model.train(dataset_train, dataset_val,
-                    learning_rate=config.LEARNING_RATE,
-                    epochs=1000,
-                    layers='all',
-                    augmentation=imgaa.Sometimes(0.5,imgaa.OneOf([imgaa.Fliplr(1),
-                                                                imgaa.Affine(rotate=(-45,45)),
-                                                                imgaa.iaa_convolutional.EdgeDetect(alpha=(0.25,0.75)),
-                                                                imgaa.Flipud(1)]),
-                                                    None))
-                                                    
-    # Note: 4gb GPU cannot handle this augmentation.....fyi
+
+    # import imgaug
+    import imgaug.augmenters as imgaa
+    #this is for the supercomputer only - my gpu cant handle this.
+    model.train(dataset_train, dataset_val,
+                learning_rate=config.LEARNING_RATE,
+                epochs=400,
+                layers='heads',
+                augmentation=imgaa.Sometimes(0.5,imgaa.OneOf([imgaa.Fliplr(1),
+                                                            imgaa.Affine(rotate=(-45,45)),
+                                                            imgaa.iaa_convolutional.EdgeDetect(alpha=(0.25,0.75)),
+                                                            imgaa.Flipud(1)]),
+                                                None))
+    
+    # ADDING AUGMENTERS HERE WORKS THE SAME AS USING THE DATAGENERATOR
     # THE TRAIN FUNCTION CALLS THE DATA GENERATOR OBJECT USING THESE AUGMENTERS.
     
     #imgaug augmenters has a weather class to artificially add snowflakes and clouds and such!

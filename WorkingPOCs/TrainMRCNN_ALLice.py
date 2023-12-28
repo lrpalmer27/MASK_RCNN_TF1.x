@@ -65,7 +65,7 @@ class IceConfig(Config):
     USE_MINI_MASK = True
     MINI_MASK_SHAPE = (56, 56)
     
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9])
+    MEAN_PIXEL = np.array([102.19411376, 154.99060038, 129.73111352])
     # DETECTION_MAX_INSTANCES = 700
 
 ############################################################

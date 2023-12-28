@@ -70,7 +70,11 @@ class SimpleConfig(mrcnn.config.Config):
     DETECTION_NMS_THRESHOLD = 0.1
     
     DETECTION_MIN_CONFIDENCE = 0.3 #lowering this lets us see more low prob detections -- usually OK
-
+    
+    MEAN_PIXEL = np.array([123.7, 116.8, 103.9])
+    
+    USE_MINI_MASK = True
+    MINI_MASK_SHAPE = (56, 56)
 	# Number of classes = number of classes + 1 (+1 for the background). The background class is named BG
     NUM_CLASSES = len(CLASS_NAMES)
 
@@ -81,7 +85,7 @@ if automatic:
     #         'dec12_nrc_50mice':'mask_rcnn_dec12_nrc_50mice_0085.h5',
     #         "dec12_nrc_100mice":'mask_rcnn_dec12_nrc_100mice_0026.h5'}
 
-    makepics={'megamodel_prt1':'mask_rcnn_augmentedmegamodel_0140.h5'}
+    makepics={'megamodel_pt2':'mask_rcnn_augmentedmegamodel_0291.h5'}
 
     model = mrcnn.model.MaskRCNN(mode="inference", 
                                 config=SimpleConfig(),
